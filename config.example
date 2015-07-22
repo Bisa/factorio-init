@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# What do you want to call this service?
+SERVICE_NAME="Factorio"
+
+# Which user is running factorio?
+# Running any public service as "root" is generally not recommended
+USERNAME=factorio
+
+# The absolute path to the factorio directory
+FACTORIO_PATH=/path/to/factorio
+# The absolute path to the factorio binary
+BINARY=${FACTORIO_PATH}/bin/x64/factorio

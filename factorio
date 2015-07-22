@@ -1,0 +1,308 @@
+#!/bin/bash
+#The MIT License (MIT)
+
+#Copyright (c) 2015 Bisa - https://github.com/Bisa
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+### BEGIN INIT INFO
+# Provides:   factorio
+# Required-Start: $local_fs $remote_fs
+# Required-Stop:  $local_fs $remote_fs
+# Should-Start:   $network
+# Should-Stop:    $network
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Short-Description:    Factorio server
+# Description:    Init script for Factorio "server" or rather a headless client.
+### END INIT INFO
+
+
+# Load config file
+if [ -L $0 ]; then
+  source `readlink -e $0 | sed "s:[^/]*$:config:"`
+else
+  source `echo $0 | sed "s:[^/]*$:config:"`
+fi
+
+if [ "$SERVICE_NAME" == "" ];then
+  echo "Couldn't load config file, please edit config.example and rename it to config"
+  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
+  exit
+fi
+
+if [ ! -f "$BINARY" ]; then
+  echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
+  exit 1
+fi
+
+DEBUG=1
+debug(){
+  if [ ${DEBUG} -gt 0 ]; then
+    echo "DEBUG LOG: $@" >&2
+  fi
+}
+
+usage(){
+  echo "Usage: $0 COMMAND"
+  echo
+  echo "Available commands:"
+  echo -e "   start \t\t Starts the server"
+  echo -e "   stop \t\t Stops the server"
+  echo -e "   restart \t\t Restarts the server"
+  echo -e "   status \t\t Displays server status"
+  echo -e "   load-save [name] \t\t Loads the specified save"
+  echo -e "   screen \t\t Shows the server screen"
+}
+
+SCREEN_NAME=${SERVICE_NAME}-screen
+PIDFILE=${FACTORIO_PATH}/${SERVICE_NAME}-service.pid
+SAVE_NAME=factorio-init-save
+#TODO: use "Hosting game at port X, peerID 0, session magic Y" to check if server started?
+#TODO: Use configurables for all command arguments to the factorio binary?
+INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval 10"
+
+ME=`whoami`
+as_user() {
+  if [ $ME == $USERNAME ]; then
+    bash -c "$1"
+  else
+    su $USERNAME -s /bin/bash -c "$1"
+  fi
+}
+
+refresh_save(){
+  savedir="${FACTORIO_PATH}/saves"
+
+  # Find the last modified save file
+  lastsave=$(as_user "ls -t ${savedir}/*.zip" | head -1)
+  debug "last modified save: ${lastsave}"
+  
+  # If the last modified save is our own, keep using it
+  if [ "${lastsave}" == "${savedir}/${SAVE_NAME}.zip" ]; then
+    debug "using existing ${SAVE_NAME}.zip"
+    return 0
+  fi
+
+  # Else we copy the latest save to our own save file
+  debug "using refreshed save"
+  as_user "cp ${lastsave} ${savedir}/${SAVE_NAME}.zip"
+}
+
+find_pid(){
+  pid=$(ps ax | grep -v grep | grep "${INVOCATION}" | grep -v "${SCREEN_NAME}" | awk '{ print $1}')
+
+  if [ "$pid" == "" ]; then
+    echo "-1"
+    debug "could not find a pid with invocation: \"${INVOCATION}\""
+  else
+    echo ${pid}
+    debug "found pid: $pid"
+  fi
+}
+
+is_running() {
+  # Checks for the factorio servers screen session
+  # returns true if it exists.
+  if [ -f "$PIDFILE" ]; then
+    pid=$(head -1 $PIDFILE)
+    actual_pid=$(find_pid)
+    debug "comparing pidfile pid \"${pid}\" with actual pid: ${actual_pid}"
+    if [ "${pid}" == "${actual_pid}" ]; then
+      return 0
+    else
+      if [ -z "$isInStop" ]; then
+        if [ -z "$roguePrinted" ]; then
+          roguePrinted=1
+          echo "Removing rogue PIDFILE"
+          as_user "rm -f ${PIDFILE}"
+        fi
+      fi
+      return 1
+    fi
+  else
+    debug "no pidfile found"
+    pid=$(find_pid)
+    if [ ${pid} -gt 0 ]; then
+      echo "No PIDFILE found, but server is running."
+      echo "Re-creating the PIDFILE."
+
+      check_permissions
+      as_user "echo ${pid} > $PIDFILE"
+
+      return 0
+    else
+      return 1
+    fi
+  fi
+}
+
+start_service() {
+
+  check_permissions
+
+  refresh_save
+  as_user "cd $FACTORIO_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
+
+  #
+  # Waiting for the server to start
+  #
+  seconds=0
+  until is_running; do
+    sleep 1
+    seconds=$seconds+1
+    if [[ $seconds -eq 2 ]]; then
+      echo "Still not running, waiting a while longer..."
+    fi
+    if [[ $seconds -ge 10 ]]; then
+      echo "Failed to start, aborting."
+      exit 1
+    fi
+  done
+  
+  echo "$SERVICE_NAME is running."
+}
+
+stop_service() {
+
+  #
+  # Stops the server
+  #
+  pid=$(head -1 $PIDFILE)
+  as_user "kill -s 2 $pid"
+  sleep 0.5
+  
+  #
+  # Waiting for the server to shut down
+  #
+  seconds=0
+  isInStop=1
+  while is_running; do
+    sleep 1
+    seconds=$seconds+1
+    if [[ $seconds -eq 2 ]]; then
+      echo "Still not shut down, waiting a while longer..."
+    fi
+    if [[ $seconds -ge 10 ]];
+      then
+      logger -t factorio-init "Failed to shut down server, aborting."
+      echo "Failed to shut down, aborting."
+      exit 1
+    fi
+  done
+  
+  as_user "rm $PIDFILE"
+  unset isInStop
+  is_running
+  echo "$SERVICE_NAME is now shut down."
+}
+
+check_permissions() {
+  as_user "touch $PIDFILE"
+  if ! as_user "test -w '$PIDFILE'" ; then
+    echo "Check Permissions. Cannot write to $PIDFILE. Correct the permissions and then excute: $0 status"
+    return 1
+  fi
+
+  return 0
+}
+
+case "$1" in
+  start)
+    # Starts the server
+    if is_running; then
+      echo "Server already running."
+    else
+       start_service
+    fi
+    ;;
+  stop)
+    # Stops the server
+    if is_running; then
+      stop_service
+    else
+      echo "No running server."
+    fi
+    ;;
+  restart)
+    # Restarts the server
+    if is_running; then
+      stop_service
+    else
+      echo "No running server, starting it..."
+    fi
+      start_service
+    ;;
+  status)
+    # Shows server status
+    if is_running; then
+      echo "$SERVICE_NAME is running."
+    else
+      echo "$SERVICE_NAME is not running."
+    fi
+    ;;
+  load-save)
+    # Ensure we get a new save file name
+    newsave=${FACTORIO_PATH}/saves/$2.zip
+    if [ ! -f "${newsave}" ]; then
+      echo "Save \"${newsave}\" does not exist, aborting action!"
+      exit 1
+    fi
+
+    # Since stopping the server causes a save we have to stop the server to do this
+    if is_running; then
+      stop_service
+    fi
+
+    # Touch the new save file & start the server
+    as_user "touch ${newsave}"
+    start_service
+
+    ;;
+  screen)
+    if is_running; then
+      as_user "script /dev/null -q -c \"screen -rx $SCREEN_NAME\""
+    else
+      echo -n "Server is not running. Do you want to start it? [n]: "
+      read START_SERVER
+      case "$START_SERVER" in
+        [Yy])
+          start_service
+          as_user "script /dev/null -q -c \"screen -rx $SCREEN_NAME\""
+          ;;
+        *)
+          clear
+          echo "Aborting startup!"
+          exit 1
+          ;;
+      esac
+    fi
+    ;;
+  help|--help|-h)
+    usage
+    ;;
+  *)
+    echo "No such command!"
+    echo
+    usage
+    exit 1
+    ;;
+esac
+
+exit 0
