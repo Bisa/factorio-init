@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Enable debugging, useful when you want to figure out why
+# this script is not behaving the way you expect it to do
+DEBUG=0
+
 # What do you want to call this service?
 SERVICE_NAME="Factorio"
 

@@ -52,7 +52,6 @@ if [ ! -f "$BINARY" ]; then
   exit 1
 fi
 
-DEBUG=1
 debug(){
   if [ ${DEBUG} -gt 0 ]; then
     echo "DEBUG LOG: $@" >&2
