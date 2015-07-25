@@ -6,7 +6,7 @@ A simple factorio init script for linux
 
  ```bash
  $ cd '/opt'
- $ git clone git@github.com:Bisa/factorio-init.git
+ $ git clone https://github.com/Bisa/factorio-init.git
  ```
 - Rename config.example to config and modify the values within according to your setup.
 - Symlink the init script:
