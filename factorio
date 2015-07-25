@@ -33,7 +33,6 @@
 # Description:    Init script for Factorio "server" or rather a headless client.
 ### END INIT INFO
 
-
 # Load config file
 if [ -L $0 ]; then
   source `readlink -e $0 | sed "s:[^/]*$:config:"`
@@ -158,24 +157,26 @@ start_service() {
 
   refresh_save
   as_user "cd $FACTORIO_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
-
-  #
-  # Waiting for the server to start
-  #
-  seconds=0
-  until is_running; do
-    sleep 1
-    seconds=$seconds+1
-    if [[ $seconds -eq 2 ]]; then
-      echo "Still not running, waiting a while longer..."
-    fi
-    if [[ $seconds -ge 10 ]]; then
-      echo "Failed to start, aborting."
-      exit 1
-    fi
-  done
-  
-  echo "$SERVICE_NAME is running."
+  if [ $? -eq 0 ]; then
+    #
+    # Waiting for the server to start
+    #
+    seconds=0
+    until is_running; do
+      sleep 1
+      seconds=$seconds+1
+      if [[ $seconds -eq 2 ]]; then
+        echo "Still not running, waiting a while longer..."
+      fi
+      if [[ $seconds -ge 10 ]]; then
+        echo "Failed to start, aborting."
+        exit 1
+      fi
+    done
+    echo "$SERVICE_NAME is running."
+  else
+    echo "Failed to start, ensure SCREEN is installed"
+  fi
 }
 
 stop_service() {
