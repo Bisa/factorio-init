@@ -69,6 +69,9 @@ usage(){
   echo -e "   screen \t\t Shows the server screen"
 }
 
+# Refrain from changing the variables below, they are used internally by the script and should
+# not be altered unless you know what you are doing
+
 SCREEN_NAME=${SERVICE_NAME}-screen
 PIDFILE=${FACTORIO_PATH}/${SERVICE_NAME}-service.pid
 SAVE_NAME=factorio-init-save
@@ -120,11 +123,11 @@ refresh_save(){
 }
 
 find_pid(){
-  pid=$(ps ax | grep -v grep | grep "${INVOCATION}" | grep -v "${SCREEN_NAME}" | awk '{ print $1}')
+  pid=$(ps ax | grep -v grep | grep "${BINARY} --start-server ${SAVE_NAME}" | grep -v "${SCREEN_NAME}" | awk '{ print $1}')
 
   if [ "$pid" == "" ]; then
     echo "-1"
-    debug "could not find a pid with invocation: \"${INVOCATION}\""
+    debug "could not find a pid for binary: \"${BINARY}\""
   else
     echo ${pid}
     debug "found pid: $pid"
@@ -142,7 +145,7 @@ is_running() {
       return 0
     else
       if [ -z "$isInStop" ]; then
-        echo "Removing rogue PIDFILE."
+        debug "Removing rogue PIDFILE."
         as_user "rm -f ${PIDFILE}"
       fi
       return 1
@@ -150,8 +153,8 @@ is_running() {
   else
     pid=$(find_pid)
     if [ ${pid} -gt 0 ]; then
-      echo "No PIDFILE found, but server is running."
-      echo "Re-creating PIDFILE."
+      debug "No PIDFILE found, but server is running."
+      debug "Re-creating PIDFILE."
 
       check_permissions
       as_user "echo ${pid} > $PIDFILE"
@@ -221,7 +224,6 @@ stop_service() {
   
   as_user "rm $PIDFILE"
   unset isInStop
-  is_running
   echo "$SERVICE_NAME is now shut down."
 }
 
@@ -259,7 +261,7 @@ case "$1" in
     else
       echo "No running server, starting it..."
     fi
-      start_service
+    start_service
     ;;
   status)
     # Shows server status
