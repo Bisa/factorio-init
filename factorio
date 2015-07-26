@@ -75,9 +75,8 @@ usage(){
 SCREEN_NAME=${SERVICE_NAME}-screen
 PIDFILE=${FACTORIO_PATH}/${SERVICE_NAME}-service.pid
 SAVE_NAME=factorio-init-save
-#TODO: use "Hosting game at port X, peerID 0, session magic Y" to check if server started?
-#TODO: Use configurables for all command arguments to the factorio binary?
-INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval 10"
+INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY}"
+debug ${INVOCATION}
 
 ME=`whoami`
 as_user() {

@@ -15,3 +15,15 @@ USERNAME=factorio
 FACTORIO_PATH=/path/to/factorio
 # The absolute path to the factorio binary
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
+
+# The latency expected between peers (milliseconds)
+# Try to set this to the highest latencay + 30
+# If Peer A and B have a latency of 100 between eachother
+# set this to 130
+LATENCY=250
+
+# The number of minutes between each autosave
+AUTOSAVE_INTERVAL=10
+# The number of autosaves to use for rotation
+AUTOSAVE_SLOTS=3
+
