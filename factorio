@@ -88,8 +88,21 @@ as_user() {
 refresh_save(){
   savedir="${FACTORIO_PATH}/saves"
 
+  # Check to see if save dir actually exists
+  if ! [ -e ${savedir} ]; then
+    echo "Error! Save directory missing: ${savedir}"
+    exit 1
+  fi
+
   # Find the last modified save file
-  lastsave=$(as_user "ls -t ${savedir}/*.zip" | head -1)
+  lastsave=$(as_user "ls -t ${savedir}/*.zip" 2> /dev/null | head -1)
+  
+  # Sanity check, did we even find any save files?
+  if [ -z "${lastsave}" ]; then
+    echo "Error! Unable to find any saves in ${savedir}"
+    exit 1
+  fi
+
   debug "last modified save: ${lastsave}"
   
   # If the last modified save is our own, keep using it
@@ -100,7 +113,10 @@ refresh_save(){
 
   # Else we copy the latest save to our own save file
   debug "using refreshed save"
-  as_user "cp ${lastsave} ${savedir}/${SAVE_NAME}.zip"
+  if ! as_user "cp ${lastsave} ${savedir}/${SAVE_NAME}.zip"; then
+    echo "Error! Failed to refresh saves"
+    exit 1
+  fi
 }
 
 find_pid(){
@@ -126,20 +142,16 @@ is_running() {
       return 0
     else
       if [ -z "$isInStop" ]; then
-        if [ -z "$roguePrinted" ]; then
-          roguePrinted=1
-          echo "Removing rogue PIDFILE"
-          as_user "rm -f ${PIDFILE}"
-        fi
+        echo "Removing rogue PIDFILE."
+        as_user "rm -f ${PIDFILE}"
       fi
       return 1
     fi
   else
-    debug "no pidfile found"
     pid=$(find_pid)
     if [ ${pid} -gt 0 ]; then
       echo "No PIDFILE found, but server is running."
-      echo "Re-creating the PIDFILE."
+      echo "Re-creating PIDFILE."
 
       check_permissions
       as_user "echo ${pid} > $PIDFILE"
