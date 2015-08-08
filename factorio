@@ -7,6 +7,14 @@ else
   source `echo $0 | sed "s:[^/]*$:config:"`
 fi
 
+# Check/load defaults for backwards compatible config options
+if [ -z "${PACKAGE_DIR_NAME}" ]; then
+  PACKAGE_DIR_NAME=factorio
+fi
+if [ -z ${USERGROUP} ]; then
+  USERGROUP=${USERNAME}
+fi
+
 if [ "$SERVICE_NAME" == "" ];then
   echo "Couldn't load config file, please edit config.example and rename it to config"
   logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
@@ -32,8 +40,9 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
-  echo -e "   load-save [name] \t\t Loads the specified save"
+  echo -e "   load-save [name] \t Loads the specified save"
   echo -e "   screen \t\t Shows the server screen"
+  echo -e "   update [tarball] \t Updates/Installs the server with specified tarball"
 }
 
 # Refrain from changing the variables below, they are used internally by the script and should
@@ -203,6 +212,50 @@ check_permissions() {
   return 0
 }
 
+update(){
+  # Factorio comes packaged in a directory named "factorio"
+  # Unless overriden in the config we will presume this is also the
+  # name used in FACTORIO_PATH else we abort to prevent messing up
+  # peoples installs - call it backwards compatibility if you will.
+
+  expected_path="`dirname ${FACTORIO_PATH}`/${PACKAGE_DIR_NAME}"
+  if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
+    echo "Aborting update! FACTORIO_PATH does not match expected path: ${expected_path}"
+    echo "See config option PACKAGE_DIR_NAME for more details"
+    exit 1
+  fi
+
+  tarball=$1
+  if ! [ -f "${tarball}" ]; then
+    echo "Update package does not exist! ${tarball}"
+    exit 1
+  fi
+
+  target="`dirname ${FACTORIO_PATH}`"
+  if ! test -w "${target}"; then
+    echo "Failed to write, aborting update!"
+    echo "Update needs to be run as a user with write permissions to ${target}"
+    exit 1
+  fi
+
+  if is_running; then
+    stop_service
+  fi
+  
+  echo "Applying update ${tarball} ..."
+  if ! tar -xzvf "${tarball}" --directory "${target}"; then
+    echo "Update failed!"
+    exit 1
+  fi
+  echo "Applying file ownership ..."
+  if ! chown -R ${USERNAME}:${USERGROUP} ${FACTORIO_PATH}; then
+    echo "Failed to apply ownership ${USERNAME}:${USERGROUP} for ${FACTORIO_PATH}"
+    exit 1
+  fi
+
+  echo "Update successfull!"
+}
+
 case "$1" in
   start)
     # Starts the server
@@ -274,6 +327,9 @@ case "$1" in
           ;;
       esac
     fi
+    ;;
+  install|update)
+    update "$2"
     ;;
   help|--help|-h)
     usage
