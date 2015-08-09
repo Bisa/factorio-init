@@ -44,6 +44,7 @@ usage(){
   echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
   echo -e "   update [tarball] \t Updates/Installs the server with specified tarball"
+  echo -e "   \t\t\t Or just use https://github.com/narc0tiq/factorio-updater"
 }
 
 ME=`whoami`
