@@ -40,19 +40,11 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
-  echo -e "   load-save [name] \t Loads the specified save"
+  echo -e "   load-save [name] \t Stops the server and loads the specified save"
+  echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
   echo -e "   update [tarball] \t Updates/Installs the server with specified tarball"
 }
-
-# Refrain from changing the variables below, they are used internally by the script and should
-# not be altered unless you know what you are doing
-
-SCREEN_NAME=${SERVICE_NAME}-screen
-PIDFILE=${FACTORIO_PATH}/${SERVICE_NAME}-service.pid
-SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY}"
-debug ${INVOCATION}
 
 ME=`whoami`
 as_user() {
@@ -103,6 +95,9 @@ find_pid(){
   if [ "$pid" == "" ]; then
     echo "-1"
     debug "could not find a pid for binary: \"${BINARY}\""
+  elif [ `echo ${pid} | wc -l` -gt 1 ]; then
+    echo "-2"
+    debug "found multiple pids"
   else
     echo ${pid}
     debug "found pid: $pid"
@@ -110,34 +105,14 @@ find_pid(){
 }
 
 is_running() {
-  # Checks for the factorio servers screen session
-  # returns true if it exists.
-  if [ -f "$PIDFILE" ]; then
-    pid=$(head -1 $PIDFILE)
-    actual_pid=$(find_pid)
-    debug "comparing pidfile pid \"${pid}\" with actual pid: ${actual_pid}"
-    if [ "${pid}" == "${actual_pid}" ]; then
-      return 0
-    else
-      if [ -z "$isInStop" ]; then
-        debug "Removing rogue PIDFILE."
-        as_user "rm -f ${PIDFILE}"
-      fi
-      return 1
-    fi
+  pid=$(find_pid)
+  if [ ${pid} -gt 0 ]; then
+    return 0
+  elif [ ${pid} == -2 ]; then
+    echo "Found multiple pids, aborting!"
+    exit 1
   else
-    pid=$(find_pid)
-    if [ ${pid} -gt 0 ]; then
-      debug "No PIDFILE found, but server is running."
-      debug "Re-creating PIDFILE."
-
-      check_permissions
-      as_user "echo ${pid} > $PIDFILE"
-
-      return 0
-    else
-      return 1
-    fi
+    return 1
   fi
 }
 
@@ -174,15 +149,14 @@ stop_service() {
   #
   # Stops the server
   #
-  pid=$(head -1 $PIDFILE)
-  as_user "kill -s 2 $pid"
+  pid=$(find_pid)
+  as_user "kill -s 2 ${pid}"
   sleep 0.5
   
   #
   # Waiting for the server to shut down
   #
   seconds=0
-  isInStop=1
   while is_running; do
     sleep 1
     seconds=$seconds+1
@@ -191,14 +165,11 @@ stop_service() {
     fi
     if [[ $seconds -ge 10 ]];
       then
-      logger -t factorio-init "Failed to shut down server, aborting."
-      echo "Failed to shut down, aborting."
+      echo "Failed to shut down, aborting!"
       exit 1
     fi
   done
   
-  as_user "rm $PIDFILE"
-  unset isInStop
   echo "$SERVICE_NAME is now shut down."
 }
 
@@ -304,10 +275,14 @@ case "$1" in
       stop_service
     fi
 
-    # Touch the new save file & start the server
+    # Touch the new save file
     as_user "touch ${newsave}"
-    start_service
-
+    ;;
+  refresh-save)
+    if is_running; then
+      stop_service
+    fi
+    refresh_saves
     ;;
   screen)
     if is_running; then
