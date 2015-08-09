@@ -21,11 +21,6 @@ if [ "$SERVICE_NAME" == "" ];then
   exit
 fi
 
-if [ ! -f "$BINARY" ]; then
-  echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
-  exit 1
-fi
-
 debug(){
   if [ ${DEBUG} -gt 0 ]; then
     echo "DEBUG LOG: $@" >&2
@@ -43,8 +38,7 @@ usage(){
   echo -e "   load-save [name] \t Stops the server and loads the specified save"
   echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
-  echo -e "   update [tarball] \t Updates/Installs the server with specified tarball"
-  echo -e "   \t\t\t Or just use https://github.com/narc0tiq/factorio-updater"
+  echo -e "   install [tarball] \t Installs the server with specified tarball"
 }
 
 ME=`whoami`
@@ -118,7 +112,10 @@ is_running() {
 }
 
 start_service() {
-
+  if [ ! -f "$BINARY" ]; then
+    echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
+    exit 1
+  fi
   check_permissions
 
   refresh_save
@@ -184,48 +181,67 @@ check_permissions() {
   return 0
 }
 
-update(){
+test_deps(){
+  return 0 # TODO: Implement ldd check on $BINARY
+}
+
+install(){
   # Factorio comes packaged in a directory named "factorio"
   # Unless overriden in the config we will presume this is also the
-  # name used in FACTORIO_PATH else we abort to prevent messing up
-  # peoples installs - call it backwards compatibility if you will.
-
+  # name used in FACTORIO_PATH
   expected_path="`dirname ${FACTORIO_PATH}`/${PACKAGE_DIR_NAME}"
   if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
-    echo "Aborting update! FACTORIO_PATH does not match expected path: ${expected_path}"
+    echo "Aborting install! FACTORIO_PATH does not match expected path: ${expected_path}"
     echo "See config option PACKAGE_DIR_NAME for more details"
+    exit 1
+  fi
+
+  # Prevent accitential overwrites
+  if [ -e "${expected_path}" ]; then
+    echo "Aborting install, ${FACTORIO_PATH} already exists"
     exit 1
   fi
 
   tarball=$1
   if ! [ -f "${tarball}" ]; then
-    echo "Update package does not exist! ${tarball}"
+    echo "Install package does not exist! ${tarball}"
     exit 1
   fi
 
   target="`dirname ${FACTORIO_PATH}`"
   if ! test -w "${target}"; then
-    echo "Failed to write, aborting update!"
-    echo "Update needs to be run as a user with write permissions to ${target}"
+    echo "Failed to write, aborting install!"
+    echo "Install needs to be run as a user with write permissions to ${target}"
     exit 1
   fi
 
-  if is_running; then
-    stop_service
-  fi
-  
-  echo "Applying update ${tarball} ..."
+  echo "Installing ${tarball} ..."
   if ! tar -xzvf "${tarball}" --directory "${target}"; then
-    echo "Update failed!"
+    echo "Install failed!"
     exit 1
   fi
+
   echo "Applying file ownership ..."
   if ! chown -R ${USERNAME}:${USERGROUP} ${FACTORIO_PATH}; then
     echo "Failed to apply ownership ${USERNAME}:${USERGROUP} for ${FACTORIO_PATH}"
     exit 1
   fi
 
-  echo "Update successfull!"
+  if test_deps; then
+    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
+      echo "Installation complete..."
+      echo
+      echo "but failed to create initial save game."
+      echo "Ensure you use: load-save [save-name] before starting the server for the first time."
+    else
+      echo "Install successfull!"
+    fi
+  else
+    echo "Installation complete..."
+    echo
+    echo "but $BINARY is missing required dependencies."
+    echo "Install the missing deps and ensure you use: load-save [save-name] before starting the server for the first time."
+  fi
 }
 
 case "$1" in
@@ -304,8 +320,8 @@ case "$1" in
       esac
     fi
     ;;
-  install|update)
-    update "$2"
+  install)
+    install "$2"
     ;;
   help|--help|-h)
     usage
