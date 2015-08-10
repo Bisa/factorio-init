@@ -385,7 +385,7 @@ case "$1" in
     if is_running; then
       stop_service
     fi
-    refresh_saves
+    refresh_save
     ;;
   screen)
     if is_running; then
