@@ -35,10 +35,11 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
-  echo -e "   load-save [name] \t Stops the server and loads the specified save"
+  echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
-  echo -e "   install [tarball] \t Installs the server with specified tarball"
+  echo -e "   install tarball \t Installs the server with specified tarball"
+  echo -e "   update [--dry-run] \t Updates the server"
 }
 
 ME=`whoami`
@@ -244,6 +245,91 @@ install(){
   fi
 }
 
+get_bin_version(){
+  echo `as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"`
+}
+get_bin_arch(){
+  echo `as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"`
+}
+
+update(){
+  if is_running; then
+    stop_service
+  fi
+  
+  if ! [ -z $1 ]; then #lazy --dry-run check ;)
+    dryrun="--dry-run"
+  fi
+  package="core-linux`get_bin_arch`"
+  version=`get_bin_version`
+  if [ -z "${UPDATE_TMPDIR}" ]; then
+    UPDATE_TMPDIR=/tmp
+  fi
+  tmpdir="${UPDATE_TMPDIR}/factorio-update"
+  invocation="python ${UPDATE_SCRIPT} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN} --for-version ${version} --package ${package} --output-path ${tmpdir}"
+  if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
+    invocation="${invocation} --experimental"
+  fi
+
+  echo "Checking for updates..."
+  result=`as_user "${invocation} --dry-run"`
+  exitcode=$?
+  if [ ${exitcode} -gt 0 ]; then
+    echo "Update check failed!"
+    exit 1
+  else
+    newversion=`echo ${result} |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
+  fi
+
+  if [ -z "${newversion}" ]; then
+    echo "No new updates for ${package} ${version}"
+    exit 0
+  else
+    echo "New version ${package} ${newversion}"
+  fi
+
+  if ! [ -z "${dryrun}" ]; then
+    #TODO: distinguish between having/and not having updates to apply?
+    exit 0
+  fi
+
+  if [ -e ${tmpdir} ]; then
+    echo "Aborting update! Temporary directory already exists ${tmpdir}"
+    echo "Remnants from a previously failed update?"
+    exit 1
+  fi
+
+  if ! as_user "mkdir -p ${tmpdir}"; then
+    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+    exit 1
+  fi
+
+  if ! as_user "${invocation}"; then
+    echo "Aborting update!"
+    rm -rf ${tmpdir}
+    exit 1
+  fi
+
+  result=`as_user "$BINARY --apply-update ${tmpdir}/*.zip"`
+  exitcode=$?
+
+  # The factorio binary exits cleanly on update errors hence we need to parse the log output.
+  # http://www.factorioforums.com/forum/viewtopic.php?f=7&t=14681
+  error=`echo ${result} |grep -o 'Error'`
+  if ! [ -z "${error}" ]; then
+    echo "${result}"
+    echo
+    echo "Error! Failed to apply update"
+    echo "You can try to apply it manually with:"
+    echo "su ${USERNAME} -c \"${BINARY} --apply-update ${tmpdir}/*.zip\""
+    exit 1
+  fi
+
+  echo "Successfully updated factorio"
+  rm -rf ${tmpdir}
+  
+}
+
 case "$1" in
   start)
     # Starts the server
@@ -322,6 +408,9 @@ case "$1" in
     ;;
   install)
     install "$2"
+    ;;
+  update)
+    update "$2"
     ;;
   help|--help|-h)
     usage

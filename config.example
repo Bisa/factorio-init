@@ -40,6 +40,23 @@ AUTOSAVE_SLOTS=3
 PACKAGE_DIR_NAME=factorio
 
 #
+# narcotiq update options https://github.com/narc0tiq/factorio-updater
+# Either pull in the submodule or clone narc0tics repo:
+#
+# git clone https://github.com/narc0tiq/factorio-updater
+# OR
+# git submodule init
+# git submodule update
+#
+# absolute path to the factorio-updater script
+UPDATE_SCRIPT=/path/to/update-factorio.py
+# See https://github.com/narc0tiq/factorio-updater for details regarding the options
+UPDATE_USERNAME=you
+UPDATE_TOKEN=yourtoken
+UPDATE_EXPERIMENTAL=0
+UPDATE_TMPDIR=/tmp
+
+#
 # Refrain from changing the variables below, they are used internally by the script and should
 # not be altered unless you know what you are doing
 #
