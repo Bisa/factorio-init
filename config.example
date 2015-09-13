@@ -56,11 +56,14 @@ UPDATE_TOKEN=yourtoken
 UPDATE_EXPERIMENTAL=0
 UPDATE_TMPDIR=/tmp
 
+# Extras
+# Additional binary arguments, these will be sent to the biary when issuing the "start" command
+EXTRA_BINARGS="--disallow-commands --peer-to-peer"
+
 #
 # Refrain from changing the variables below, they are used internally by the script and should
 # not be altered unless you know what you are doing
 #
 SCREEN_NAME=factorio-screen
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY}"
-
+INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY}" "${EXTRA_BINARGS}"
