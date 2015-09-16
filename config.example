@@ -66,4 +66,4 @@ EXTRA_BINARGS="--disallow-commands --peer-to-peer"
 #
 SCREEN_NAME=factorio-screen
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY}" "${EXTRA_BINARGS}"
+INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"
