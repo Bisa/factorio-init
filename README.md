@@ -43,7 +43,7 @@ A simple factorio init script for linux
  
  ```bash
  $ systemctl daemon-reload
- $ systemctl factorio start
+ $ systemctl start factorio.service
  ```
  # Versioning
  The code adheres to Semantic Versioning v2.0.0 http://semver.org/spec/v2.0.0.html
