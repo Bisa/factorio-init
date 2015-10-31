@@ -260,7 +260,11 @@ update(){
   if ! [ -z $1 ]; then #lazy --dry-run check ;)
     dryrun="--dry-run"
   fi
-  package="core-linux`get_bin_arch`"
+  if [ ${HEADLESS} -gt 0 ]; then
+    package="core-linux_headless`get_bin_arch`"
+  else
+    package="core-linux`get_bin_arch`"
+  fi
   version=`get_bin_version`
   if [ -z "${UPDATE_TMPDIR}" ]; then
     UPDATE_TMPDIR=/tmp
