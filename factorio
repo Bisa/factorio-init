@@ -14,6 +14,11 @@ fi
 if [ -z ${USERGROUP} ]; then
   USERGROUP=${USERNAME}
 fi
+if [ -z $HEADLESS ]; then
+  # This is a server init script, assume headless default
+  HEADLESS=1
+fi
+
 
 if [ "$SERVICE_NAME" == "" ];then
   echo "Couldn't load config file, please edit config.example and rename it to config"
