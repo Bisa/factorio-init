@@ -15,7 +15,7 @@ USERGROUP=factorio
 # The absolute path to the factorio directory
 FACTORIO_PATH=/path/to/factorio
 # The absolute path to the factorio binary
-BINARY=/path/to/factorio/bin/x64/factorio
+BINARY=${FACTORIO_PATH}/bin/x64/factorio
 #Where to store the pidfile
 PIDFILE=/path/to/pid
 
