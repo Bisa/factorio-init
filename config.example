@@ -20,8 +20,8 @@ BINARY=/path/to/factorio/bin/x64/factorio
 PIDFILE=/path/to/pid
 
 # The latency expected between peers (milliseconds)
-# Try to set this to the highest latencay + 30
-# If Peer A and B have a latency of 100 between eachother
+# Try to set this to the highest latency + 30
+# If Peer A and B have a latency of 100 between each other
 # set this to 130
 LATENCY=250
 
