@@ -20,8 +20,8 @@ BINARY=/path/to/factorio/bin/x64/factorio
 PIDFILE=/path/to/pid
 
 # The latency expected between peers (milliseconds)
-# Try to set this to the highest latencay + 30
-# If Peer A and B have a latency of 100 between eachother
+# Try to set this to the highest latency + 30
+# If Peer A and B have a latency of 100 between each other
 # set this to 130
 LATENCY=250
 
@@ -32,7 +32,7 @@ AUTOSAVE_SLOTS=3
 
 # Factorio comes packaged in a tarball containing the directory named "factorio"
 # when using this scripts update/install command we expect to see this very
-# directory. If you want to supply your own update/install tar other than what youc an download
+# directory. If you want to supply your own update/install tar other than what you can download
 # from factorio.com/downloads you can use this option to tell the script this is ok.
 #
 # If you place your factorio install within a directory named "factorio" and you update/install
