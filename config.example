@@ -51,8 +51,6 @@ PACKAGE_DIR_NAME=factorio
 # absolute path to the factorio-updater script
 UPDATE_SCRIPT=/path/to/update-factorio.py
 # See https://github.com/narc0tiq/factorio-updater for details regarding the options
-UPDATE_USERNAME=you
-UPDATE_TOKEN=yourtoken
 UPDATE_EXPERIMENTAL=0
 UPDATE_TMPDIR=/tmp
 # Set to 1 to enable download of the headless updates
