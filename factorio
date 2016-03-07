@@ -275,7 +275,7 @@ update(){
     UPDATE_TMPDIR=/tmp
   fi
   tmpdir="${UPDATE_TMPDIR}/factorio-update"
-  invocation="python ${UPDATE_SCRIPT} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN} --for-version ${version} --package ${package} --output-path ${tmpdir}"
+  invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
   fi
