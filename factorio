@@ -328,30 +328,29 @@ update(){
     exit 1
   fi
 
+  # Time to download the updates
   if ! as_user "${invocation}"; then
     echo "Aborting update!"
     rm -rf ${tmpdir}
     exit 1
   fi
 
-  result=`as_user "$BINARY --apply-update ${tmpdir}/*.zip"`
-  exitcode=$?
-
-  # The factorio binary exits cleanly on update errors hence we need to parse the log output.
-  # http://www.factorioforums.com/forum/viewtopic.php?f=7&t=14681
-  error=`echo ${result} |grep -o 'Error'`
-  if ! [ -z "${error}" ]; then
-    echo "${result}"
-    echo
-    echo "Error! Failed to apply update"
-    echo "You can try to apply it manually with:"
-    echo "su ${USERNAME} -c \"${BINARY} --apply-update ${tmpdir}/*.zip\""
-    exit 1
-  fi
+  for patch in $(find ${tmpdir} -type f -name "*.zip"); do
+    echo "Applying ${patch} ..."
+    result=`as_user "$BINARY --apply-update ${patch}"`
+    exitcode=$?
+    if [ $exitcode -gt 0 ]; then
+      echo "${result}"
+      echo
+      echo "Error! Failed to apply update"
+      echo "You can try to apply it manually with:"
+      echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch}\""
+      exit 1
+    fi
+  done
 
   echo "Successfully updated factorio"
   rm -rf ${tmpdir}
-  
 }
 
 case "$1" in
