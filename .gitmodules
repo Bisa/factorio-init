@@ -1,4 +1,0 @@
-[submodule "factorio-updater"]
-	path = factorio-updater
-	url = https://github.com/narc0tiq/factorio-updater
-	branch = master

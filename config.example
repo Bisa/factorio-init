@@ -40,18 +40,16 @@ AUTOSAVE_SLOTS=3
 PACKAGE_DIR_NAME=factorio
 
 #
-# narcotiq update options https://github.com/narc0tiq/factorio-updater
-# Either pull in the submodule or clone narc0tics repo:
+# narcotiq made a sweet update script for factorio and by cloning into this
+# you can simply run "factorio update" provided you configure the below arguments
+# To install the updater:
 #
 # git clone https://github.com/narc0tiq/factorio-updater
-# OR
-# git submodule init
-# git submodule update
 #
+
 # absolute path to the factorio-updater script
 UPDATE_SCRIPT=/path/to/update_factorio.py
-# See https://github.com/narc0tiq/factorio-updater for details regarding the options
-# Also note that if you set HEADLESS=1 the username/token will not be used as the headless
+# Note that if you set HEADLESS=1 the username/token will not be used as the headless
 # download is provided free of charge
 HEADLESS=1
 UPDATE_USERNAME=you

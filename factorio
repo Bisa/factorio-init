@@ -258,6 +258,12 @@ get_bin_arch(){
 }
 
 update(){
+  if ! [ -e "${UPDATE_SCRIPT}" ]; then
+    echo "Failed to find update script, blatantly refusing to continue!"
+    echo "Try cloning into git@github.com:narc0tiq/factorio-updater.git and set the UPDATE_SCRIPT config before you try again."
+    exit 1
+  fi
+
   if is_running; then
     stop_service
   fi
