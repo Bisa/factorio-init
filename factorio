@@ -272,11 +272,15 @@ update(){
   if is_running; then
     stop_service
   fi
-  
-  if ! [ -z $1 ]; then #lazy --dry-run check ;)
-    dryrun="--dry-run"
-  fi
-  
+
+  # Assume the user wants a dry run? (our only argument to this function)
+  if ! [ -z "$1" ]; then
+    echo "Running updater in --dry-run mode, no patches will be applied"
+    dryrun=1
+  else
+    dryrun=0
+  fi  
+
   if [ ${HEADLESS} -gt 0 ]; then
     package="core-linux_headless`get_bin_arch`"
   else
@@ -317,8 +321,13 @@ update(){
     echo "New version ${package} ${newversion}"
   fi
 
-  if ! [ -z "${dryrun}" ]; then
-    #TODO: distinguish between having/and not having updates to apply?
+  # Go or no Go?
+  if [ ${dryrun} -gt 0 ]; then 
+    echo "Dry run, not taking further actions!"
+    # allow scripts to read return code 0 for no updates and 2 if there are updates to apply 
+    if ! [ -z "${newversion}" ]; then
+      exit 2
+    fi
     exit 0
   fi
 
