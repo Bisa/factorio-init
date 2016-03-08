@@ -7,23 +7,28 @@ else
   source `echo $0 | sed "s:[^/]*$:config:"`
 fi
 
+if [ -z "${SERVICE_NAME}" ]; then
+  echo "Couldn't load config file, please edit config.example and rename it to config"
+  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
+  exit
+fi
+
 # Check/load defaults for backwards compatible config options
 if [ -z "${PACKAGE_DIR_NAME}" ]; then
   PACKAGE_DIR_NAME=factorio
 fi
-if [ -z ${USERGROUP} ]; then
+if [ -z "${USERGROUP}" ]; then
   USERGROUP=${USERNAME}
 fi
-if [ -z $HEADLESS ]; then
+if [ -z "${HEADLESS}" ]; then
   # This is a server init script, assume headless default
   HEADLESS=1
 fi
-
-
-if [ "$SERVICE_NAME" == "" ];then
-  echo "Couldn't load config file, please edit config.example and rename it to config"
-  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
-  exit
+if [ -z "${PIDFILE}" ]; then
+  PIDFILE="${FACTORIO_PATH}/${SERVICE_NAME}.pid"
+fi
+if [ -z "${SCREEN_NAME}" ]; then
+  SCREEN_NAME="${SERVICE_NAME}"
 fi
 
 debug(){
@@ -267,11 +272,15 @@ update(){
   if is_running; then
     stop_service
   fi
-  
-  if ! [ -z $1 ]; then #lazy --dry-run check ;)
-    dryrun="--dry-run"
-  fi
-  
+
+  # Assume the user wants a dry run? (our only argument to this function)
+  if ! [ -z "$1" ]; then
+    echo "Running updater in --dry-run mode, no patches will be applied"
+    dryrun=1
+  else
+    dryrun=0
+  fi  
+
   if [ ${HEADLESS} -gt 0 ]; then
     package="core-linux_headless`get_bin_arch`"
   else
@@ -312,8 +321,13 @@ update(){
     echo "New version ${package} ${newversion}"
   fi
 
-  if ! [ -z "${dryrun}" ]; then
-    #TODO: distinguish between having/and not having updates to apply?
+  # Go or no Go?
+  if [ ${dryrun} -gt 0 ]; then 
+    echo "Dry run, not taking further actions!"
+    # allow scripts to read return code 0 for no updates and 2 if there are updates to apply 
+    if ! [ -z "${newversion}" ]; then
+      exit 2
+    fi
     exit 0
   fi
 
