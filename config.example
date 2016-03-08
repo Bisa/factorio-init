@@ -16,8 +16,6 @@ USERGROUP=factorio
 FACTORIO_PATH=/path/to/factorio
 # The absolute path to the factorio binary
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
-#Where to store the pidfile
-PIDFILE=/path/to/pid
 
 # The latency expected between peers (milliseconds)
 # Try to set this to the highest latency + 30
@@ -65,6 +63,5 @@ EXTRA_BINARGS="--disallow-commands --peer-to-peer"
 # Refrain from changing the variables below, they are used internally by the script and should
 # not be altered unless you know what you are doing
 #
-SCREEN_NAME=factorio-screen
 SAVE_NAME=factorio-init-save
 INVOCATION="${BINARY} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"

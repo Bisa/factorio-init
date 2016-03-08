@@ -7,23 +7,28 @@ else
   source `echo $0 | sed "s:[^/]*$:config:"`
 fi
 
+if [ -z "${SERVICE_NAME}" ]; then
+  echo "Couldn't load config file, please edit config.example and rename it to config"
+  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
+  exit
+fi
+
 # Check/load defaults for backwards compatible config options
 if [ -z "${PACKAGE_DIR_NAME}" ]; then
   PACKAGE_DIR_NAME=factorio
 fi
-if [ -z ${USERGROUP} ]; then
+if [ -z "${USERGROUP}" ]; then
   USERGROUP=${USERNAME}
 fi
-if [ -z $HEADLESS ]; then
+if [ -z "${HEADLESS}" ]; then
   # This is a server init script, assume headless default
   HEADLESS=1
 fi
-
-
-if [ "$SERVICE_NAME" == "" ];then
-  echo "Couldn't load config file, please edit config.example and rename it to config"
-  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
-  exit
+if [ -z "${PIDFILE}" ]; then
+  PIDFILE="${FACTORIO_PATH}/${SERVICE_NAME}.pid"
+fi
+if [ -z "${SCREEN_NAME}" ]; then
+  SCREEN_NAME="${SERVICE_NAME}"
 fi
 
 debug(){
