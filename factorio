@@ -27,9 +27,6 @@ fi
 if [ -z "${PIDFILE}" ]; then
   PIDFILE="${FACTORIO_PATH}/${SERVICE_NAME}.pid"
 fi
-if [ -z "${SCREEN_NAME}" ]; then
-  SCREEN_NAME="${SERVICE_NAME}"
-fi
 
 debug(){
   if [ ${DEBUG} -gt 0 ]; then
@@ -96,7 +93,7 @@ refresh_save(){
 }
 
 find_pid(){
-  pid=$(ps ax | grep -v grep | grep "${BINARY} --start-server ${SAVE_NAME}" | grep -v "${SCREEN_NAME}" | awk '{ print $1}')
+  pid=$(ps ax | grep -v grep | grep "${BINARY} --start-server ${SAVE_NAME}" | grep -v " SCREEN " | awk '{ print $1}')
 
   if [ "$pid" == "" ]; then
     echo "-1"
@@ -130,7 +127,7 @@ start_service() {
   check_permissions
 
   refresh_save
-  as_user "cd $FACTORIO_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
+  as_user "cd $FACTORIO_PATH && screen -dmS $SERVICE_NAME $INVOCATION"
   if [ $? -eq 0 ]; then
     #
     # Waiting for the server to start
@@ -426,14 +423,14 @@ case "$1" in
     ;;
   screen)
     if is_running; then
-      as_user "script /dev/null -q -c \"screen -rx $SCREEN_NAME\""
+      as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
     else
       echo -n "Server is not running. Do you want to start it? [n]: "
       read START_SERVER
       case "$START_SERVER" in
         [Yy])
           start_service
-          as_user "script /dev/null -q -c \"screen -rx $SCREEN_NAME\""
+          as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
           ;;
         *)
           clear
