@@ -266,10 +266,6 @@ update(){
     exit 1
   fi
 
-  if is_running; then
-    stop_service
-  fi
-
   # Assume the user wants a dry run? (our only argument to this function)
   if ! [ -z "$1" ]; then
     echo "Running updater in --dry-run mode, no patches will be applied"
@@ -344,6 +340,11 @@ update(){
     echo "Aborting update!"
     rm -rf ${tmpdir}
     exit 1
+  fi
+  
+  # Stop the server if it is running.
+  if is_running; then
+    stop_service
   fi
 
   for patch in $(find ${tmpdir} -type f -name "*.zip"); do
