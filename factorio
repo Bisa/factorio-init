@@ -347,7 +347,7 @@ update(){
     stop_service
   fi
 
-  for patch in $(find ${tmpdir} -type f -name "*.zip"); do
+  for patch in $(find ${tmpdir} -type f -name "*.zip" | sort); do
     echo "Applying ${patch} ..."
     result=`as_user "$BINARY --apply-update ${patch}"`
     exitcode=$?
