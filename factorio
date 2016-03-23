@@ -28,6 +28,11 @@ if [ -z "${PIDFILE}" ]; then
   PIDFILE="${FACTORIO_PATH}/${SERVICE_NAME}.pid"
 fi
 
+if [ -z "${FCONF}" ]; then
+  echo "FCONF config missing! Add it to your config file"
+  exit 1
+fi
+
 debug(){
   if [ ${DEBUG} -gt 0 ]; then
     echo "DEBUG LOG: $@" >&2

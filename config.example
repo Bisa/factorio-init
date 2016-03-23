@@ -16,6 +16,8 @@ USERGROUP=factorio
 FACTORIO_PATH=/path/to/factorio
 # The absolute path to the factorio binary
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
+# Absolute path to factorios config.ini
+FCONF=${FACTORIO_PATH}/config/config.ini
 
 # The latency expected between peers (milliseconds)
 # Try to set this to the highest latency + 30
