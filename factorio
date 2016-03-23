@@ -93,7 +93,7 @@ refresh_save(){
 }
 
 find_pid(){
-  pid=$(ps ax | grep -v grep | grep "${BINARY} --start-server ${SAVE_NAME}" | grep -v " SCREEN " | awk '{ print $1}')
+  pid=$(ps ax | grep -v grep | grep "${INVOCATION}" | grep -v " SCREEN " | awk '{ print $1}')
 
   if [ "$pid" == "" ]; then
     echo "-1"
