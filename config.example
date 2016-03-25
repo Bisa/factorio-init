@@ -18,6 +18,8 @@ FACTORIO_PATH=/path/to/factorio
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
 # Absolute path to factorios config.ini
 FCONF=/path/to/factorio/config/config.ini
+# Port on which you want to run the server
+PORT=34197
 
 # The latency expected between peers (milliseconds)
 # Try to set this to the highest latency + 30
@@ -66,4 +68,4 @@ EXTRA_BINARGS="--disallow-commands --peer-to-peer"
 # not be altered unless you know what you are doing
 #
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --config ${FCONF} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"
+INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"
