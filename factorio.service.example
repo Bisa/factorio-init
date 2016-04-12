@@ -3,7 +3,7 @@ Description=Factorio
 
 [Service]
 User=factorio
-# Re-use config.example, ie by symplinking to /etc/default/factorio
+# Re-use config.example, ie by symlinking to /etc/default/factorio
 EnvironmentFile=/etc/default/factorio
 TimeoutStartSec=5
 # Use this to always have systemd start the server using the last autosave
