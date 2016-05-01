@@ -75,7 +75,7 @@ refresh_save(){
   # Check to see if save dir actually exists
   if ! [ -e ${savedir} ]; then
     echo "Error! Save directory missing: ${savedir}"
-    exit 1
+    return 1
   fi
 
   # Find the last modified save file
@@ -84,7 +84,7 @@ refresh_save(){
   # Sanity check, did we even find any save files?
   if [ -z "${lastsave}" ]; then
     echo "Error! Unable to find any saves in ${savedir}"
-    exit 1
+    return 1
   fi
 
   debug "last modified save: ${lastsave}"
@@ -98,8 +98,8 @@ refresh_save(){
   # Else we copy the latest save to our own save file
   debug "using refreshed save"
   if ! as_user "cp ${lastsave} ${savedir}/${SAVE_NAME}.zip"; then
-    echo "Error! Failed to refresh saves"
-    exit 1
+    echo "Error! Unable to copy save"
+    return 1
   fi
 }
 
@@ -133,11 +133,19 @@ is_running() {
 start_service() {
   if [ ! -f "$BINARY" ]; then
     echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
-    exit 1
+    return 1
   fi
-  check_permissions
 
-  refresh_save
+  if ! check_permissions; then
+    echo "Error! Incorrect permissions"
+    return 1
+  fi
+
+  if ! refresh_save; then
+    echo "Error! Failed to refresh save"
+    return 1
+  fi
+
   as_user "cd $FACTORIO_PATH && screen -dmS $SERVICE_NAME $INVOCATION"
   if [ $? -eq 0 ]; then
     #
@@ -151,13 +159,14 @@ start_service() {
         echo "Still not running, waiting a while longer..."
       fi
       if [[ $seconds -ge 10 ]]; then
-        echo "Failed to start, aborting."
-        exit 1
+        echo "$SERVICE_NAME failed to start within 10 seconds, giving up"
+        return 1
       fi
     done
     echo "$SERVICE_NAME is running."
   else
     echo "Failed to start, ensure SCREEN is installed"
+    return 1
   fi
 }
 
@@ -182,8 +191,8 @@ stop_service() {
     fi
     if [[ $seconds -ge 10 ]];
       then
-      echo "Failed to shut down, aborting!"
-      exit 1
+      echo "$SERVICE_NAME failed to stop within 10 seconds, giving up"
+      return 1
     fi
   done
   
@@ -381,32 +390,49 @@ case "$1" in
     # Starts the server
     if is_running; then
       echo "Server already running."
+      exit 0
     else
-       start_service
+       if ! start_service; then
+         echo "Could not start $SERVICE_NAME"
+         exit 1
+       fi
     fi
     ;;
+
   stop)
     # Stops the server
     if is_running; then
-      stop_service
+      if ! stop_service; then
+        echo "Could not stop $SERVICE_NAME"
+        exit 1
+      fi
     else
       echo "No running server."
+      exit 0
     fi
     ;;
+
   restart)
     # Restarts the server
     if is_running; then
       if stop_service; then
-        start_service
+        if ! start_service; then
+          echo "Could not start $SERVICE_NAME after restart!"
+          exit 1
+        fi
       else
         echo "Failed to stop $SERVICE_NAME, aborting restart!"
         exit 1
       fi
     else
       echo "No running server to restart, starting it..."
-      start_service
+      if ! start_service; then
+        echo "Could not start $SERVICE_NAME"
+        exit 1
+      fi
     fi
     ;;
+
   status)
     # Shows server status
     if is_running; then
@@ -416,6 +442,7 @@ case "$1" in
       exit 1
     fi
     ;;
+
   load-save)
     # Ensure we get a new save file name
     newsave=${FACTORIO_PATH}/saves/$2.zip
@@ -426,18 +453,29 @@ case "$1" in
 
     # Since stopping the server causes a save we have to stop the server to do this
     if is_running; then
-      stop_service
+      if ! stop_service; then
+        echo "Aborting, unable to stop $SERVICE_NAME"
+        exit 1
+      fi
     fi
 
     # Touch the new save file
     as_user "touch ${newsave}"
     ;;
+
   refresh-save)
     if is_running; then
-      stop_service
+      if ! stop_service; then
+        echo "Aborting, unable to stop $SERVICE_NAME"
+        exit 1
+      fi
     fi
-    refresh_save
+    if ! refresh_save; then
+      echo "Unable to refresh save!"
+      exit 1
+    fi
     ;;
+
   screen)
     if is_running; then
       as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
@@ -446,7 +484,10 @@ case "$1" in
       read START_SERVER
       case "$START_SERVER" in
         [Yy])
-          start_service
+          if ! start_service; then
+            echo "Unable to start $SERVICE_NAME"
+            exit 1
+          fi
           as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
           ;;
         *)
