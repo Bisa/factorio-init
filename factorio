@@ -15,8 +15,7 @@ fi
 
 if [ -z "${SERVICE_NAME}" ]; then
   echo "Couldn't load config file, please edit config.example and rename it to config"
-  logger -t factorio-init "Couldn't load config file, please edit config.example and rename it to config"
-  exit
+  exit 1
 fi
 
 # Check/load defaults for backwards compatible config options
@@ -30,24 +29,28 @@ if [ -z "${HEADLESS}" ]; then
   # This is a server init script, assume headless default
   HEADLESS=1
 fi
-if [ -z "${FCONF}" ]; then
-  echo "FCONF config missing! Add it to your config file"
-  exit 1
+
+if ! [ $1 == "install" ]; then
+  if [ -z ${FCONF} ]; then
+    echo "Missing FCONF, ensure it's defined in your config and try again"
+    exit 1
+  fi
+
+  if ! [ -e ${FCONF} ]; then
+    echo "Could not find factorio config file: ${FCONF}"
+    echo "If this is the first time you run this script; You might need to generate the config.ini"
+    echo "by running: sudo -u $USERNAME ${BINARY} --start-server ${SAVE_NAME}"
+    exit 1
+  fi
+  if [ -z "${WRITE_DIR}" ]; then
+    # figure out the write-data path (where factorio looks for saves and mods)
+    # Note - this is a hefty little operation, possible cause of head ache down the road
+    # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
+    # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
+    WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
+  fi
+  debug "write path: $WRITE_DIR"
 fi
-if ! [ -e ${FCONF} ]; then
-  echo "Could not find factorio config file: ${FCONF}"
-  echo "If this is the first time you run this script; You might need to generate the config.ini"
-  echo "by running: sudo -u $USERNAME ${BINARY} --start-server ${SAVE_NAME}"
-  exit 1
-fi
-if [ -z "${WRITE_DIR}" ]; then
-  # figure out the write-data path (where factorio looks for saves and mods)
-  # Note - this is a hefty little operation, possible cause of head ache down the road
-  # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
-  # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
-  WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
-fi
-debug "write path: $WRITE_DIR"
 
 usage(){
   echo "Usage: $0 COMMAND"
