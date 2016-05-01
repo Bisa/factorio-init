@@ -109,7 +109,7 @@ find_pid(){
   if [ "$pid" == "" ]; then
     echo "-1"
     debug "could not find a pid for binary: \"${BINARY}\""
-  elif [ `echo ${pid} | wc -l` -gt 1 ]; then
+  elif [ `echo "${pid}" | wc -l` -gt 1 ]; then
     echo "-2"
     debug "found multiple pids"
   else
@@ -123,7 +123,7 @@ is_running() {
   if [ ${pid} -gt 0 ]; then
     return 0
   elif [ ${pid} == -2 ]; then
-    echo "Found multiple pids, aborting!"
+    echo "Found multiple pids, aborting! (ensure only one instance of $SERVICE_NAME is running)"
     exit 1
   else
     return 1
