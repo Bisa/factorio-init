@@ -396,11 +396,16 @@ case "$1" in
   restart)
     # Restarts the server
     if is_running; then
-      stop_service
+      if stop_service; then
+        start_service
+      else
+        echo "Failed to stop $SERVICE_NAME, aborting restart!"
+        exit 1
+      fi
     else
-      echo "No running server, starting it..."
+      echo "No running server to restart, starting it..."
+      start_service
     fi
-    start_service
     ;;
   status)
     # Shows server status
