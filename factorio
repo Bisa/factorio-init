@@ -150,7 +150,7 @@ start_service() {
     return 1
   fi
 
-  as_user "cd $FACTORIO_PATH && screen -dmS $SERVICE_NAME $INVOCATION"
+  as_user "screen -dmS $SERVICE_NAME $INVOCATION"
   if [ $? -eq 0 ]; then
     #
     # Waiting for the server to start
