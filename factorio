@@ -104,7 +104,8 @@ refresh_save(){
 }
 
 find_pid(){
-  pid=$(ps ax | grep -v grep | grep "${INVOCATION}" | grep -v " SCREEN " | awk '{ print $1}')
+  pid=$(ps ax | grep -v grep | grep "$(echo -e "${INVOCATION}" | sed -e 's/[[:space:]]*$//')" | grep -v " SCREEN " | awk '{ print $1}')
+  debug "assessing pid: $pid"
 
   if [ "$pid" == "" ]; then
     echo "-1"
@@ -114,7 +115,6 @@ find_pid(){
     debug "found multiple pids"
   else
     echo ${pid}
-    debug "found pid: $pid"
   fi
 }
 
