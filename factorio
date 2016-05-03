@@ -60,8 +60,11 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
+  echo -e "   new-game \t\t Stops the server and creates a new game"
+  echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
+  echo -e "   list-saves \t\t List saves"
   echo -e "   screen \t\t Shows the server screen"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
@@ -447,6 +450,34 @@ case "$1" in
     fi
     ;;
 
+  new-game)
+    # Stop Service
+    if is_running; then
+      stop_service
+    fi
+
+    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
+      echo "Failed to create new game"
+	  exit 1
+    else
+      echo "New game created"
+    fi
+    ;;
+	
+  save-game)
+    savename=${FACTORIO_PATH}/saves/$2.zip
+
+    # Stop Service
+    if is_running; then
+      stop_service
+    fi
+
+    if ! as_user "cp ${FACTORIO_PATH}/saves/${SAVE_NAME}.zip ${savename}"; then
+      echo "Error! Failed to save game"
+      exit 1
+    fi
+    ;;
+
   load-save)
     # Ensure we get a new save file name
     newsave=${WRITE_DIR}/saves/$2.zip
@@ -478,6 +509,19 @@ case "$1" in
       echo "Unable to refresh save!"
       exit 1
     fi
+    ;;
+
+  list-saves)
+    savedir="${FACTORIO_PATH}/saves"
+
+    # Check to see if save dir actually exists
+    if ! [ -e ${savedir} ]; then
+      echo "Error! Save directory missing: ${savedir}"
+      exit 1
+    fi
+
+    # Display savedir contents 
+    as_user "cd ${savedir} && stat --printf='%.16y  %n\n' * | sed 's/\(.*\)\..../\1/g' | sort"
     ;;
 
   screen)
