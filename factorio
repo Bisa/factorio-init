@@ -468,7 +468,7 @@ case "$1" in
     ;;
 	
   save-game)
-    savename="${FACTORIO_PATH}/saves/$2.zip"
+    savename="${WRITE_DIR}/saves/$2.zip"
 
     # Stop Service
     if is_running; then
@@ -478,7 +478,7 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "cp ${FACTORIO_PATH}/saves/${SAVE_NAME}.zip ${savename}"; then
+    if ! as_user "cp ${WRITE_DIR}/saves/${SAVE_NAME}.zip ${savename}"; then
       echo "Error! Failed to save game"
       exit 1
     fi
@@ -518,7 +518,7 @@ case "$1" in
     ;;
 
   list-saves)
-    savedir="${FACTORIO_PATH}/saves"
+    savedir="${WRITE_DIR}/saves"
 
     # Check to see if save dir actually exists
     if ! [ -e ${savedir} ]; then
@@ -527,7 +527,7 @@ case "$1" in
     fi
 
     # Display savedir contents 
-    as_user "cd ${savedir} && stat --printf='%.16y  %n\n' * | sed 's/\(.*\)\..../\1/g' | sort"
+    as_user "cd ${savedir} && stat --printf='%.16y  %n\n' * |sed 's/\(.*\)\..../\1/g' |sort"
     ;;
 
   screen)
