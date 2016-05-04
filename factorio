@@ -453,23 +453,29 @@ case "$1" in
   new-game)
     # Stop Service
     if is_running; then
-      stop_service
+      if ! stop_service; then
+        echo "Failed to stop server, unable to create new save"
+        exit 1
+      fi
     fi
 
     if ! as_user "$BINARY --create ${SAVE_NAME}"; then
       echo "Failed to create new game"
-	  exit 1
+      exit 1
     else
       echo "New game created"
     fi
     ;;
 	
   save-game)
-    savename=${FACTORIO_PATH}/saves/$2.zip
+    savename="${FACTORIO_PATH}/saves/$2.zip"
 
     # Stop Service
     if is_running; then
-      stop_service
+      if ! stop_service; then
+        echo "Failed to stop server, unable to save as \"$2\""
+        exit 1
+      fi
     fi
 
     if ! as_user "cp ${FACTORIO_PATH}/saves/${SAVE_NAME}.zip ${savename}"; then
