@@ -60,6 +60,8 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
+  echo -e "   new-game \t\t Stops the server and creates a new game"
+  echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
@@ -443,6 +445,40 @@ case "$1" in
       echo "$SERVICE_NAME is running."
     else
       echo "$SERVICE_NAME is not running."
+      exit 1
+    fi
+    ;;
+
+  new-game)
+    # Stop Service
+    if is_running; then
+      if ! stop_service; then
+        echo "Failed to stop server, unable to create new save"
+        exit 1
+      fi
+    fi
+
+    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
+      echo "Failed to create new game"
+      exit 1
+    else
+      echo "New game created"
+    fi
+    ;;
+	
+  save-game)
+    savename="${WRITE_DIR}/saves/$2.zip"
+
+    # Stop Service
+    if is_running; then
+      if ! stop_service; then
+        echo "Failed to stop server, unable to save as \"$2\""
+        exit 1
+      fi
+    fi
+
+    if ! as_user "cp ${WRITE_DIR}/saves/${SAVE_NAME}.zip ${savename}"; then
+      echo "Error! Failed to save game"
       exit 1
     fi
     ;;
