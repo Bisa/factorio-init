@@ -17,7 +17,7 @@ FACTORIO_PATH=/path/to/factorio
 # The absolute path to the factorio binary
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
 # Absolute path to factorios config.ini
-FCONF=/path/to/factorio/config/config.ini
+FCONF=${FACTORIO_PATH}/config/config.ini
 # Port on which you want to run the server
 PORT=34197
 
