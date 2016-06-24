@@ -39,6 +39,7 @@ if ! [ $1 == "install" ]; then
   if ! [ -e ${FCONF} ]; then
     echo "Could not find factorio config file: ${FCONF}"
     echo "If this is the first time you run this script; You might need to generate the config.ini"
+    echo "(also make sure the save exist or the command will fail)"
     echo "by running: sudo -u $USERNAME ${BINARY} --start-server ${SAVE_NAME}"
     exit 1
   fi
