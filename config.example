@@ -68,4 +68,4 @@ EXTRA_BINARGS="--disallow-commands --peer-to-peer"
 # not be altered unless you know what you are doing
 #
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server ${SAVE_NAME} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"
+INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"

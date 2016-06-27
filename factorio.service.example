@@ -6,9 +6,7 @@ User=factorio
 # Re-use config.example, ie by symlinking to /etc/default/factorio
 EnvironmentFile=/etc/default/factorio
 TimeoutStartSec=5
-# Use this to always have systemd start the server using the last autosave
-ExecStartPre=/usr/local/bin/factorio refresh-save
-ExecStart=/opt/factorio/bin/x64/factorio --config $FCONF --port $PORT --start-server $SAVE_NAME --autosave-interval $AUTOSAVE_INTERVAL --autosave-slots $AUTOSAVE_SLOTS --latency-ms $LATENCY $EXTRA_BINARGS
+ExecStart=/opt/factorio/bin/x64/factorio --config $FCONF --port $PORT --start-server-load-latest --autosave-interval $AUTOSAVE_INTERVAL --autosave-slots $AUTOSAVE_SLOTS --latency-ms $LATENCY $EXTRA_BINARGS
 TimeoutStopSec=10
 ExecStop=/usr/local/bin/factorio stop
 RestartSec=10

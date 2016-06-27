@@ -64,7 +64,6 @@ usage(){
   echo -e "   new-game \t\t Stops the server and creates a new game"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
-  echo -e "   refresh-save \t\t Stops the server and loads the last modified save"
   echo -e "   screen \t\t Shows the server screen"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
@@ -76,40 +75,6 @@ as_user() {
     bash -c "$1"
   else
     su $USERNAME -s /bin/bash -c "$1"
-  fi
-}
-
-refresh_save(){
-  savedir="${WRITE_DIR}/saves"
-
-  # Check to see if save dir actually exists
-  if ! [ -e ${savedir} ]; then
-    echo "Error! Save directory missing: ${savedir}"
-    return 1
-  fi
-
-  # Find the last modified save file
-  lastsave=$(as_user "ls -t ${savedir}/*.zip" 2> /dev/null | head -1)
-  
-  # Sanity check, did we even find any save files?
-  if [ -z "${lastsave}" ]; then
-    echo "Error! Unable to find any saves in ${savedir}"
-    return 1
-  fi
-
-  debug "last modified save: ${lastsave}"
-  
-  # If the last modified save is our own, keep using it
-  if [ "${lastsave}" == "${savedir}/${SAVE_NAME}.zip" ]; then
-    debug "using existing ${SAVE_NAME}.zip"
-    return 0
-  fi
-
-  # Else we copy the latest save to our own save file
-  debug "using refreshed save"
-  if ! as_user "cp ${lastsave} ${savedir}/${SAVE_NAME}.zip"; then
-    echo "Error! Unable to copy save"
-    return 1
   fi
 }
 
@@ -148,11 +113,6 @@ start_service() {
 
   if ! check_permissions; then
     echo "Error! Incorrect permissions, unable to write to dir \"$WRITE_DIR\""
-    return 1
-  fi
-
-  if ! refresh_save; then
-    echo "Error! Failed to refresh save"
     return 1
   fi
 
@@ -502,19 +462,6 @@ case "$1" in
 
     # Touch the new save file
     as_user "touch ${newsave}"
-    ;;
-
-  refresh-save)
-    if is_running; then
-      if ! stop_service; then
-        echo "Aborting, unable to stop $SERVICE_NAME"
-        exit 1
-      fi
-    fi
-    if ! refresh_save; then
-      echo "Unable to refresh save!"
-      exit 1
-    fi
     ;;
 
   screen)
