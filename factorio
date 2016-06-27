@@ -459,7 +459,7 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
+    if ! as_user "$BINARY --create ${WRITE_DIR}/saves/${SAVE_NAME}"; then
       echo "Failed to create new game"
       exit 1
     else
