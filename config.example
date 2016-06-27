@@ -18,6 +18,8 @@ FACTORIO_PATH=/path/to/factorio
 BINARY=${FACTORIO_PATH}/bin/x64/factorio
 # Absolute path to factorios config.ini
 FCONF=${FACTORIO_PATH}/config/config.ini
+# Server settings file, see data/server-settings.example.json
+SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 # Port on which you want to run the server
 PORT=34197
 
@@ -61,11 +63,11 @@ UPDATE_TMPDIR=/tmp
 
 # Extras
 # Additional binary arguments, these will be sent to the binary when issuing the "start" command
-EXTRA_BINARGS="--disallow-commands --peer-to-peer"
+EXTRA_BINARGS="--allow-commands admin-only"
 
 #
 # Refrain from changing the variables below, they are used internally by the script and should
 # not be altered unless you know what you are doing
 #
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"
+INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"

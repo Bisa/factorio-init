@@ -35,6 +35,12 @@ if ! [ $1 == "install" ]; then
     echo "Missing FCONF, ensure it's defined in your config and try again"
     exit 1
   fi
+  
+  if ! [ -e "${SERVER_SETTINGS}" ]; then
+    echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
+    echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
+    exit 1
+  fi
 
   if ! [ -e ${FCONF} ]; then
     echo "Could not find factorio config file: ${FCONF}"
