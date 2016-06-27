@@ -1,6 +1,19 @@
 # Factorio Init Script
 A simple factorio init script for linux
 
+# Debugging
+ If you find yourself wondering why stuff is not working the way you expect:
+ - Enable debugging in the config
+ and/or
+ - Try running the same commands as the factorio user
+
+ ```bash
+ $ cd '/opt/factorio-init'
+ $ source ./config  # Grab the config variables
+ $ echo $INVOCATION # Does this look correct to you?
+ $ $INVOCATION #Start the server, watch the log output for any Errors
+ ```
+
 # Install
 - Create a directory where you want to store this script along with configuration. (either copy-paste the files or clone from github):
 
