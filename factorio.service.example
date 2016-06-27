@@ -5,9 +5,9 @@ Description=Factorio
 User=factorio
 # Re-use config.example, ie by symlinking to /etc/default/factorio
 EnvironmentFile=/etc/default/factorio
-TimeoutStartSec=5
+TimeoutStartSec=5min
 ExecStart=/opt/factorio/bin/x64/factorio --config $FCONF --port $PORT --start-server-load-latest --autosave-interval $AUTOSAVE_INTERVAL --autosave-slots $AUTOSAVE_SLOTS --latency-ms $LATENCY $EXTRA_BINARGS
-TimeoutStopSec=10
+TimeoutStopSec=1min
 ExecStop=/usr/local/bin/factorio stop
 RestartSec=10
 Restart=on-failure
