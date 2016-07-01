@@ -1,0 +1,16 @@
+[Unit]
+Description=Factorio Server
+Requires=factorio-env.service
+After=factorio-env.service
+
+[Service]
+Type=simple
+PIDFile=/opt/factorio/.pid
+EnvironmentFile=/opt/factorio-init/systemd.env
+ExecStart=/opt/factorio/bin/x64/factorio $INVOCATION
+ExecReload=/opt/factorio-init/factorio stop
+ExecReload=/opt/factorio/bin/x64/factorio $INVOCATION
+ExecStop=/opt/factorio-init/factorio stop
+
+[Install]
+WantedBy=multi-user.target
