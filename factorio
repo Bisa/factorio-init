@@ -124,7 +124,7 @@ start_service() {
     return 1
   fi
 
-  ${INVOCATION} 2>&1 /dev/null &
+  ${INVOCATION} > /dev/null 2>&1 &
   PID=$!
 
   ps -p ${PID} > /dev/null 2>&1
