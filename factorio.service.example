@@ -1,16 +1,22 @@
 [Unit]
 Description=Factorio Server
-Requires=factorio-env.service
-After=factorio-env.service
+After=network.target
 
 [Service]
-Type=simple
-PIDFile=/opt/factorio/.pid
-EnvironmentFile=/opt/factorio-init/systemd.env
-ExecStart=/opt/factorio/bin/x64/factorio $INVOCATION
-ExecReload=/opt/factorio-init/factorio stop
-ExecReload=/opt/factorio/bin/x64/factorio $INVOCATION
+User=factorio
+Group=factorio
+
+# We will store a pid file in your ${WRITE_DIR}/server.pid
+# Adjust if you change the write dir of your server
+PIDFile=/opt/factorio/server.pid
+
+Type=forking
+TimeoutStartSec=20
+ExecStart=/opt/factorio-init/factorio start
+TimeoutStopSec=20
 ExecStop=/opt/factorio-init/factorio stop
+RestartSec=20
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target

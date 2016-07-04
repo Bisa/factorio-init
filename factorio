@@ -67,6 +67,9 @@ if ! [ $1 == "install" ]; then
     WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
   fi
   debug "write path: $WRITE_DIR"
+
+  PIDFILE="${WRITE_DIR}/server.pid"
+
 fi
 
 usage(){
@@ -125,15 +128,18 @@ gen_systemd_env(){
 }
 
 is_running() {
-  pid=$(find_pid)
-  if [ ${pid} -gt 0 ]; then
-    return 0
-  elif [ ${pid} == -2 ]; then
-    echo "Found multiple pids, aborting! (ensure only one instance of $SERVICE_NAME is running)"
-    exit 1
-  else
-    return 1
+  if [ -e ${PIDFILE} ]; then
+    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+      debug "${SERVICE_NAME} is running with pid $(cat ${PIDFILE})"
+      return 0
+    else
+      debug "Found ${PIDFILE}, but the server is not running. It's possible that your server has crashed"
+      debug "Check the log for details"
+      rm ${PIDFILE} 2> /dev/null
+      return 2
+    fi
   fi
+  return 1
 }
 
 start_service() {
@@ -147,57 +153,54 @@ start_service() {
     return 1
   fi
 
-  as_user "screen -dmS $SERVICE_NAME $INVOCATION"
-  if [ $? -eq 0 ]; then
-    #
-    # Waiting for the server to start
-    #
-    seconds=0
-    until is_running; do
-      sleep 1
-      seconds=$seconds+1
-      if [[ $seconds -eq 2 ]]; then
-        echo "Still not running, waiting a while longer..."
-      fi
-      if [[ $seconds -ge 10 ]]; then
-        echo "$SERVICE_NAME failed to start within 10 seconds, giving up"
-        return 1
-      fi
-    done
-    echo "$SERVICE_NAME is running."
-  else
-    echo "Failed to start, ensure SCREEN is installed"
+  ${INVOCATION} 2>&1 /dev/null &
+  PID=$!
+
+  ps -p ${PID} > /dev/null 2>&1
+  if [ "$?" -ne "0" ]; then
+    echo "Unable to start ${SERVICE_NAME}"
     return 1
+  else
+    echo ${PID} > ${PIDFILE}
+    echo "Started ${SERVICE_NAME}, please see log for details"
   fi
 }
 
 stop_service() {
+  if [ -e ${PIDFILE} ]; then
+    echo -n "Stopping ${SERVICE_NAME}: "
+    if kill -TERM $(cat ${PIDFILE}) 2> /dev/null; then
+      sec=1
+      while [ "$sec" -le 15 ]; do
+        if [ -e ${PIDFILE} ]; then
+          if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+            echo -n ". "
+            sleep 1
+          else
+            break
+          fi
+        else
+          break
+        fi
+        sec=$(($sec+1)) 
+      done
+    fi
 
-  #
-  # Stops the server
-  #
-  pid=$(find_pid)
-  as_user "kill -s 2 ${pid}"
-  sleep 0.5
-  
-  #
-  # Waiting for the server to shut down
-  #
-  seconds=0
-  while is_running; do
-    sleep 1
-    seconds=$seconds+1
-    if [[ $seconds -eq 2 ]]; then
-      echo "Still not shut down, waiting a while longer..."
+    if [ -e ${PIDFILE} ]; then
+      if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+        echo "Unable to shut down nicely, killing the process!"
+        kill -KILL $(cat ${PIDFILE}) 2> /dev/null
+      fi
+    else
+      echo "done"
     fi
-    if [[ $seconds -ge 10 ]];
-      then
-      echo "$SERVICE_NAME failed to stop within 10 seconds, giving up"
-      return 1
-    fi
-  done
-  
-  echo "$SERVICE_NAME is now shut down."
+
+    rm ${PIDFILE} 2> /dev/null
+    return 0 # we've either shut down gracefully or killed the process
+  else
+    echo "${SERVICE_NAME} is not running (${PIDFILE} does not exist)"
+    return 1
+  fi
 }
 
 check_permissions() {
