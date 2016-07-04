@@ -1,6 +1,0 @@
-[Unit]
-Description=Generates /opt/factorio-init/systemd.env file
-
-[Service]
-Type=oneshot
-ExecStart=/opt/factorio-init/factorio gen-systemdenv /opt/factorio-init/systemd.env
