@@ -157,13 +157,11 @@ stop_service() {
       done
     fi
 
-    if [ -e ${PIDFILE} ]; then
-      if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
-        echo "Unable to shut down nicely, killing the process!"
-        kill -KILL $(cat ${PIDFILE}) 2> /dev/null
-      fi
+    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+      echo "Unable to shut down nicely, killing the process!"
+      kill -KILL $(cat ${PIDFILE}) 2> /dev/null
     else
-      echo "done"
+      echo "complete!"
     fi
 
     rm ${PIDFILE} 2> /dev/null
