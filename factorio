@@ -114,14 +114,28 @@ is_running() {
 }
 
 start_service() {
-  if [ ! -f "$BINARY" ]; then
-    echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
+  if [ ! -e "${BINARY}" ]; then
+    echo "Failed to start: Can't find the specified binary ${BINARY}. Please check your config!"
     return 1
   fi
 
   if ! check_permissions; then
     echo "Error! Incorrect permissions, unable to write to dir \"$WRITE_DIR\""
     return 1
+  fi
+
+  # I'm hoping for someone to learn a thing or two here hence I am deliberately omitting
+  # the exact instructions to override this - if you need to run this as root you hopefully
+  # also know why and bypassing this restriction should be simple enough for you.
+  if [ ${UID} -eq 0 ]; then
+    if ! [ -z ${PERMIT_ROOT_EXEC} ]; then
+      echo -e ">>\e[31m WARNING\e[39m<<"
+      echo -e "You are running a (possibly) public facing binary as the \e[31mroot\e[39m user of your server!"
+    else
+      echo -e ">>\e[31mRefusing to run ${SERVICE_NAME} as root!\e[39m<<"
+      echo "(If you really need to run this as root you can override this in the script code)"
+      return 1
+    fi
   fi
 
   ${INVOCATION} > /dev/null 2>&1 &
