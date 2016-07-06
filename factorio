@@ -70,6 +70,10 @@ if ! [ $1 == "install" ]; then
 
   PIDFILE="${WRITE_DIR}/server.pid"
 
+  if [ -z "${FIFO}" ];then
+    FIFO="${WRITE_DIR}/server.fifo"
+  fi
+
 fi
 
 usage(){
@@ -124,18 +128,14 @@ start_service() {
     rm ${PIDFILE} 2> /dev/null
   fi
   
-  if [ ! -e "${BINARY}" ]; then
-    echo "Failed to start: Can't find the specified binary ${BINARY}. Please check your config!"
-    return 1
-  fi
+
 
   if ! check_permissions; then
     echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
     return 1
   fi
 
-  as_user "touch ${PIDFILE}"
-  as_user "${INVOCATION} > /dev/null 2>&1 & echo \$! > ${PIDFILE}"
+  as_user "tail -f ${FIFO} |${INVOCATION} > /dev/null 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -182,9 +182,26 @@ stop_service() {
 }
 
 check_permissions() {
+  if [ ! -e "${BINARY}" ]; then
+    echo "Can't find ${BINARY}. Please check your config!"
+    exit 1
+  fi
+
   if ! as_user "test -w ${WRITE_DIR}" ; then
-    debug "Check Permissions. Cannot write to ${WRITE_DIR}"
-    return 1
+    echo "Check Permissions. Cannot write to ${WRITE_DIR}"
+    exit 1
+  fi
+
+  if ! as_user "touch ${PIDFILE}" ; then
+    echo "Check Permissions. Cannot touch pidfile ${PIDFILE}"
+    exit 1
+  fi
+
+  if ! [ -p ${FIFO} ]; then
+    if ! as_user "mkfifo ${FIFO}"; then
+      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
+      exit 1
+    fi
   fi
 }
 
