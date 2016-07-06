@@ -114,39 +114,34 @@ is_running() {
 }
 
 start_service() {
+  if [ -e ${PIDFILE} ]; then
+    ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
+    if [ "$?" -eq "0" ]; then
+      echo "${SERVICE_NAME} is already running!"
+      return 1
+    fi
+    debug "Found rogue pid file, server might have crashed"
+    rm ${PIDFILE} 2> /dev/null
+  fi
+  
   if [ ! -e "${BINARY}" ]; then
     echo "Failed to start: Can't find the specified binary ${BINARY}. Please check your config!"
     return 1
   fi
 
   if ! check_permissions; then
-    echo "Error! Incorrect permissions, unable to write to dir \"$WRITE_DIR\""
+    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
     return 1
   fi
 
-  # I'm hoping for someone to learn a thing or two here hence I am deliberately omitting
-  # the exact instructions to override this - if you need to run this as root you hopefully
-  # also know why and bypassing this restriction should be simple enough for you.
-  if [ ${UID} -eq 0 ]; then
-    if ! [ -z ${PERMIT_ROOT_EXEC} ]; then
-      echo -e ">>\e[31m WARNING\e[39m<<"
-      echo -e "You are running a (possibly) public facing binary as the \e[31mroot\e[39m user of your server!"
-    else
-      echo -e ">>\e[31mRefusing to run ${SERVICE_NAME} as root!\e[39m<<"
-      echo "(If you really need to run this as root you can override this in the script code)"
-      return 1
-    fi
-  fi
+  as_user "touch ${PIDFILE}"
+  as_user "${INVOCATION} > /dev/null 2>&1 & echo \$! > ${PIDFILE}"
 
-  ${INVOCATION} > /dev/null 2>&1 &
-  PID=$!
-
-  ps -p ${PID} > /dev/null 2>&1
+  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
     echo "Unable to start ${SERVICE_NAME}"
     return 1
   else
-    echo ${PID} > ${PIDFILE}
     echo "Started ${SERVICE_NAME}, please see log for details"
   fi
 }
@@ -187,8 +182,8 @@ stop_service() {
 }
 
 check_permissions() {
-  if ! as_user "test -w '$WRITE_DIR'" ; then
-    debug "Check Permissions. Cannot write to $WRITE_DIR"
+  if ! as_user "test -w ${WRITE_DIR}" ; then
+    debug "Check Permissions. Cannot write to ${WRITE_DIR}"
     return 1
   fi
 }
