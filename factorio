@@ -84,14 +84,13 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
+  echo -e "   cmd command/message \t Send command/chat"
   echo -e "   new-game \t\t Stops the server and creates a new game"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
 }
-
-
 
 ME=`whoami`
 as_user() {
@@ -127,8 +126,6 @@ start_service() {
     debug "Found rogue pid file, server might have crashed"
     rm ${PIDFILE} 2> /dev/null
   fi
-  
-
 
   if ! check_permissions; then
     echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
@@ -181,7 +178,23 @@ stop_service() {
   fi
 }
 
-check_permissions() {
+send_cmd(){
+  if is_running; then
+    if [ -p ${FIFO} ]; then
+      echo $@
+      echo $@ > ${FIFO}
+      sleep 1
+    else
+      echo "${FIFO} is not a pipe!"
+      return 1
+    fi
+  else
+    echo "Unable to send cmd to a stopped server!"
+    return 1
+  fi
+}
+
+check_permissions(){
   if [ ! -e "${BINARY}" ]; then
     echo "Can't find ${BINARY}. Please check your config!"
     exit 1
@@ -361,6 +374,7 @@ update(){
   
   # Stop the server if it is running.
   if is_running; then
+    send_cmd "Updating to new Factorio version, be right back"
     stop_service
   fi
 
@@ -399,6 +413,7 @@ case "$1" in
   stop)
     # Stops the server
     if is_running; then
+      send_cmd "Server is being shut down on request"
       if ! stop_service; then
         echo "Could not stop $SERVICE_NAME"
         exit 1
@@ -412,6 +427,7 @@ case "$1" in
   restart)
     # Restarts the server
     if is_running; then
+      send_cmd "Server is being restarted on request, be right back!"
       if stop_service; then
         if ! start_service; then
           echo "Could not start $SERVICE_NAME after restart!"
@@ -439,10 +455,13 @@ case "$1" in
       exit 1
     fi
     ;;
-
+  cmd)
+    send_cmd "${@:2}"
+    ;;
   new-game)
     # Stop Service
     if is_running; then
+      send_cmd "Generating new save, please stand by"
       if ! stop_service; then
         echo "Failed to stop server, unable to create new save"
         exit 1
@@ -462,6 +481,7 @@ case "$1" in
 
     # Stop Service
     if is_running; then
+      send_cmd "Stopping server to save game"
       if ! stop_service; then
         echo "Failed to stop server, unable to save as \"$2\""
         exit 1
@@ -484,6 +504,7 @@ case "$1" in
 
     # Since stopping the server causes a save we have to stop the server to do this
     if is_running; then
+      send_cmd "Stopping server to load a saved game"
       if ! stop_service; then
         echo "Aborting, unable to stop $SERVICE_NAME"
         exit 1
