@@ -67,6 +67,13 @@ if ! [ $1 == "install" ]; then
     WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
   fi
   debug "write path: $WRITE_DIR"
+
+  PIDFILE="${WRITE_DIR}/server.pid"
+
+  if [ -z "${FIFO}" ];then
+    FIFO="${WRITE_DIR}/server.fifo"
+  fi
+
 fi
 
 usage(){
@@ -77,10 +84,10 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
+  echo -e "   cmd command/message \t Send command/chat"
   echo -e "   new-game \t\t Stops the server and creates a new game"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
-  echo -e "   screen \t\t Shows the server screen"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
 }
@@ -94,101 +101,120 @@ as_user() {
   fi
 }
 
-find_pid(){
-  pid=$(ps ax | grep -v grep | grep "$(echo -e "${INVOCATION}" | sed -e 's/[[:space:]]*$//')" | grep -v " SCREEN " | awk '{ print $1}')
-  debug "assessing pid: $pid"
-
-  if [ "$pid" == "" ]; then
-    echo "-1"
-    debug "could not find a pid for binary: \"${BINARY}\""
-  elif [ `echo "${pid}" | wc -l` -gt 1 ]; then
-    echo "-2"
-    debug "found multiple pids"
-  else
-    echo ${pid}
-  fi
-}
-
 is_running() {
-  pid=$(find_pid)
-  if [ ${pid} -gt 0 ]; then
-    return 0
-  elif [ ${pid} == -2 ]; then
-    echo "Found multiple pids, aborting! (ensure only one instance of $SERVICE_NAME is running)"
-    exit 1
-  else
-    return 1
+  if [ -e ${PIDFILE} ]; then
+    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+      debug "${SERVICE_NAME} is running with pid $(cat ${PIDFILE})"
+      return 0
+    else
+      debug "Found ${PIDFILE}, but the server is not running. It's possible that your server has crashed"
+      debug "Check the log for details"
+      rm ${PIDFILE} 2> /dev/null
+      return 2
+    fi
   fi
+  return 1
 }
 
 start_service() {
-  if [ ! -f "$BINARY" ]; then
-    echo "Failed to start: Can't find the specified binary $BINARY. Please check your config!"
-    return 1
+  if [ -e ${PIDFILE} ]; then
+    ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
+    if [ "$?" -eq "0" ]; then
+      echo "${SERVICE_NAME} is already running!"
+      return 1
+    fi
+    debug "Found rogue pid file, server might have crashed"
+    rm ${PIDFILE} 2> /dev/null
   fi
 
   if ! check_permissions; then
-    echo "Error! Incorrect permissions, unable to write to dir \"$WRITE_DIR\""
+    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
     return 1
   fi
 
-  as_user "screen -dmS $SERVICE_NAME $INVOCATION"
-  if [ $? -eq 0 ]; then
-    #
-    # Waiting for the server to start
-    #
-    seconds=0
-    until is_running; do
-      sleep 1
-      seconds=$seconds+1
-      if [[ $seconds -eq 2 ]]; then
-        echo "Still not running, waiting a while longer..."
-      fi
-      if [[ $seconds -ge 10 ]]; then
-        echo "$SERVICE_NAME failed to start within 10 seconds, giving up"
-        return 1
-      fi
-    done
-    echo "$SERVICE_NAME is running."
-  else
-    echo "Failed to start, ensure SCREEN is installed"
+  as_user "tail -f ${FIFO} |${INVOCATION} > /dev/null 2>&1 & echo \$! > ${PIDFILE}"
+
+  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
+  if [ "$?" -ne "0" ]; then
+    echo "Unable to start ${SERVICE_NAME}"
     return 1
+  else
+    echo "Started ${SERVICE_NAME}, please see log for details"
   fi
 }
 
 stop_service() {
+  if [ -e ${PIDFILE} ]; then
+    echo -n "Stopping ${SERVICE_NAME}: "
+    if kill -TERM $(cat ${PIDFILE}) 2> /dev/null; then
+      sec=1
+      while [ "$sec" -le 15 ]; do
+        if [ -e ${PIDFILE} ]; then
+          if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+            echo -n ". "
+            sleep 1
+          else
+            break
+          fi
+        else
+          break
+        fi
+        sec=$(($sec+1)) 
+      done
+    fi
 
-  #
-  # Stops the server
-  #
-  pid=$(find_pid)
-  as_user "kill -s 2 ${pid}"
-  sleep 0.5
-  
-  #
-  # Waiting for the server to shut down
-  #
-  seconds=0
-  while is_running; do
-    sleep 1
-    seconds=$seconds+1
-    if [[ $seconds -eq 2 ]]; then
-      echo "Still not shut down, waiting a while longer..."
+    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+      echo "Unable to shut down nicely, killing the process!"
+      kill -KILL $(cat ${PIDFILE}) 2> /dev/null
+    else
+      echo "complete!"
     fi
-    if [[ $seconds -ge 10 ]];
-      then
-      echo "$SERVICE_NAME failed to stop within 10 seconds, giving up"
-      return 1
-    fi
-  done
-  
-  echo "$SERVICE_NAME is now shut down."
+
+    rm ${PIDFILE} 2> /dev/null
+    return 0 # we've either shut down gracefully or killed the process
+  else
+    echo "${SERVICE_NAME} is not running (${PIDFILE} does not exist)"
+    return 1
+  fi
 }
 
-check_permissions() {
-  if ! as_user "test -w '$WRITE_DIR'" ; then
-    debug "Check Permissions. Cannot write to $WRITE_DIR"
+send_cmd(){
+  if is_running; then
+    if [ -p ${FIFO} ]; then
+      echo $@
+      echo $@ > ${FIFO}
+      sleep 1
+    else
+      echo "${FIFO} is not a pipe!"
+      return 1
+    fi
+  else
+    echo "Unable to send cmd to a stopped server!"
     return 1
+  fi
+}
+
+check_permissions(){
+  if [ ! -e "${BINARY}" ]; then
+    echo "Can't find ${BINARY}. Please check your config!"
+    exit 1
+  fi
+
+  if ! as_user "test -w ${WRITE_DIR}" ; then
+    echo "Check Permissions. Cannot write to ${WRITE_DIR}"
+    exit 1
+  fi
+
+  if ! as_user "touch ${PIDFILE}" ; then
+    echo "Check Permissions. Cannot touch pidfile ${PIDFILE}"
+    exit 1
+  fi
+
+  if ! [ -p ${FIFO} ]; then
+    if ! as_user "mkfifo ${FIFO}"; then
+      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
+      exit 1
+    fi
   fi
 }
 
@@ -258,6 +284,7 @@ install(){
 get_bin_version(){
   echo `as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"`
 }
+
 get_bin_arch(){
   echo `as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"`
 }
@@ -347,6 +374,7 @@ update(){
   
   # Stop the server if it is running.
   if is_running; then
+    send_cmd "Updating to new Factorio version, be right back"
     stop_service
   fi
 
@@ -385,6 +413,7 @@ case "$1" in
   stop)
     # Stops the server
     if is_running; then
+      send_cmd "Server is being shut down on request"
       if ! stop_service; then
         echo "Could not stop $SERVICE_NAME"
         exit 1
@@ -398,6 +427,7 @@ case "$1" in
   restart)
     # Restarts the server
     if is_running; then
+      send_cmd "Server is being restarted on request, be right back!"
       if stop_service; then
         if ! start_service; then
           echo "Could not start $SERVICE_NAME after restart!"
@@ -425,10 +455,13 @@ case "$1" in
       exit 1
     fi
     ;;
-
+  cmd)
+    send_cmd "${@:2}"
+    ;;
   new-game)
     # Stop Service
     if is_running; then
+      send_cmd "Generating new save, please stand by"
       if ! stop_service; then
         echo "Failed to stop server, unable to create new save"
         exit 1
@@ -448,6 +481,7 @@ case "$1" in
 
     # Stop Service
     if is_running; then
+      send_cmd "Stopping server to save game"
       if ! stop_service; then
         echo "Failed to stop server, unable to save as \"$2\""
         exit 1
@@ -470,6 +504,7 @@ case "$1" in
 
     # Since stopping the server causes a save we have to stop the server to do this
     if is_running; then
+      send_cmd "Stopping server to load a saved game"
       if ! stop_service; then
         echo "Aborting, unable to stop $SERVICE_NAME"
         exit 1
@@ -478,29 +513,6 @@ case "$1" in
 
     # Touch the new save file
     as_user "touch ${newsave}"
-    ;;
-
-  screen)
-    if is_running; then
-      as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
-    else
-      echo -n "Server is not running. Do you want to start it? [n]: "
-      read START_SERVER
-      case "$START_SERVER" in
-        [Yy])
-          if ! start_service; then
-            echo "Unable to start $SERVICE_NAME"
-            exit 1
-          fi
-          as_user "script /dev/null -q -c \"screen -rx $SERVICE_NAME\""
-          ;;
-        *)
-          clear
-          echo "Aborting startup!"
-          exit 1
-          ;;
-      esac
-    fi
     ;;
   install)
     install "$2"
