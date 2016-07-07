@@ -3,8 +3,8 @@ A simple factorio init script for linux
 
 # Debugging
  If you find yourself wondering why stuff is not working the way you expect:
- - Enable debugging in the config
- and/or
+ - Check the logs, I suggest you `tail -f /opt/factorio/factorio-current.log` in a separate session
+ - Enable debugging in the config and/or:
  - Try running the same commands as the factorio user
 
  ```bash
@@ -23,6 +23,24 @@ A simple factorio init script for linux
  ```
 - Rename config.example to config and modify the values within according to your setup.
 
+## Systemd
+- Copy the example service, adjust & reload
+
+ ```bash
+ $ cp /opt/factorio-init/factorio.service.example /etc/systemd/system/factorio.service
+ # Edit the service file to suit your environment then reload systemd
+ $ systemctl daemon-reload
+ ```
+
+- Verify that the server starts
+
+ ```bash
+ $ systemctl start factorio
+ $ systemctl status -l factorio
+ # Remember to enable the service at startup if you want that:
+ $ systemctl enable factorio
+ ```
+
 ## SysvInit
 - Symlink the init script:
 
@@ -40,5 +58,14 @@ A simple factorio init script for linux
  $ service factorio help
  ```
 
- # License
- This code is realeased with the MIT license, see the LICENSE file.
+# Thank You
+- To all who find this script useful in one way or the other
+- A big thank you to [Wube](https://www.factorio.com/team) for making [Factorio](https://www.factorio.com/)
+- A special thanks to NoPantsMcDance, Oxyd, HanziQ, TheFactorioCube and all other frequent users of the [#factorio](irc://irc.esper.net/#factorio) channel @ esper.net
+- Thank you to Salzig for pointing me in the right direction when it comes to input redirection
+- At last, but not least; Thank you to all [contributors](https://github.com/Bisa/factorio-init/graphs/contributors) and users posting [issues](https://github.com/Bisa/factorio-init/issues) in my [github](https://github.com/Bisa/factorio-init/) project or on the [factorio forums](https://forums.factorio.com/viewtopic.php?f=133&t=13874)
+
+You are all a great source of motivation, thank you.
+
+# License
+This code is realeased with the MIT license, see the LICENSE file.
