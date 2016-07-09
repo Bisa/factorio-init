@@ -5,13 +5,14 @@ A simple factorio init script for linux
  If you find yourself wondering why stuff is not working the way you expect:
  - Check the logs, I suggest you `tail -f /opt/factorio/factorio-current.log` in a separate session
  - Enable debugging in the config and/or:
- - Try running the same commands as the factorio user
+ - Try running the same commands as the factorio user (`/opt/factorio-init/factorio invocation` will tell you what the factorio user tries to run at start)
 
  ```bash
- $ cd '/opt/factorio-init'
- $ source ./config  # Grab the config variables
- $ echo $INVOCATION # Does this look correct to you?
- $ $INVOCATION #Start the server, watch the log output for any Errors
+ $ /opt/factorio-init invocation
+ #  Run this as the factorio user, example:
+ $ sudo -u factorio 'whatever invocation gave you'
+ # You should see some output in your terminal here, hopefully giving
+ # you a hint of what is going wrong
  ```
 
 # Install
@@ -46,16 +47,11 @@ A simple factorio init script for linux
 
  ```bash
  $ ln -s /opt/factorio-init/factorio /etc/init.d/factorio
- ```
-- Make the script executable:
-
- ```bash
+ # Make the script executable:
  $ chmod +x /opt/factorio-init/factorio
- ```
-- Try it out!
-
- ```bash
+ # Try it out:
  $ service factorio help
+ # Do not forget to enable the service at boot if you want that.
  ```
 
 # Thank You

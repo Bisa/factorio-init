@@ -41,9 +41,19 @@ if [ -z "${HEADLESS}" ]; then
 fi
 
 if ! [ $1 == "install" ]; then
-  if [ -z ${FCONF} ]; then
-    echo "Missing FCONF, ensure it's defined in your config and try again"
+  if [ -z ${BINARY} ]; then
+    # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+  fi
+
+  if ! [ -e ${BINARY} ]; then
+    echo "Could not find factorio binary! ${BINARY}"
+    echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
     exit 1
+  fi
+
+  if [ -z ${FCONF} ]; then
+    FCONF="${FACTORIO_PATH}/config/config.ini"
   fi
   
   if ! [ -e "${SERVER_SETTINGS}" ]; then
@@ -54,9 +64,13 @@ if ! [ $1 == "install" ]; then
 
   if ! [ -e ${FCONF} ]; then
     echo "Could not find factorio config file: ${FCONF}"
-    echo "If this is the first time you run this script; You might need to generate the config.ini"
-    echo "(also make sure the save exist or the command will fail)"
-    echo "by running: sudo -u $USERNAME ${BINARY} --start-server ${SAVE_NAME}"
+    echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
+    echo "(also make sure you have a save to run or the server will not start)"
+    echo
+    echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame"
+    echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest"
+    echo
+    echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
     exit 1
   fi
   if [ -z "${WRITE_DIR}" ]; then
@@ -64,6 +78,7 @@ if ! [ $1 == "install" ]; then
     # Note - this is a hefty little operation, possible cause of head ache down the road
     # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
     # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
+    debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
     WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
   fi
   debug "write path: $WRITE_DIR"
@@ -73,6 +88,9 @@ if ! [ $1 == "install" ]; then
   if [ -z "${FIFO}" ];then
     FIFO="${WRITE_DIR}/server.fifo"
   fi
+
+  # Finally, set up the invocation
+  INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${RCON} ${EXTRA_BINARGS}"
 
 fi
 
@@ -85,11 +103,12 @@ usage(){
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
   echo -e "   cmd command/message \t Send command/chat"
-  echo -e "   new-game \t\t Stops the server and creates a new game"
+  echo -e "   new-game name\t\t Stops the server and creates a new game with the specified name"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
+  echo -e "   invocation \t\t Outputs the invocation for debugging purpose"
 }
 
 ME=`whoami`
@@ -264,21 +283,7 @@ install(){
     exit 1
   fi
 
-  if test_deps; then
-    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
-      echo "Installation complete..."
-      echo
-      echo "but failed to create initial save game."
-      echo "Ensure you use: load-save [save-name] before starting the server for the first time."
-    else
-      echo "Install successfull!"
-    fi
-  else
-    echo "Installation complete..."
-    echo
-    echo "but $BINARY is missing required dependencies."
-    echo "Install the missing deps and ensure you use: load-save [save-name] before starting the server for the first time."
-  fi
+  echo "Installation complete, edit the config and start your server"
 }
 
 get_bin_version(){
@@ -459,6 +464,12 @@ case "$1" in
     send_cmd "${@:2}"
     ;;
   new-game)
+    if [ -z $2 ]; then
+      echo "You must specify a save name for your new game"
+      exit 1
+    fi
+    savename="${WRITE_DIR}/saves/$2"
+
     # Stop Service
     if is_running; then
       send_cmd "Generating new save, please stand by"
@@ -468,11 +479,11 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "$BINARY --create ${WRITE_DIR}/saves/${SAVE_NAME}"; then
+    if ! as_user "$BINARY --create ${savename}"; then
       echo "Failed to create new game"
       exit 1
     else
-      echo "New game created"
+      echo "New game created: ${savename}.zip"
     fi
     ;;
 	
@@ -488,7 +499,8 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "cp ${WRITE_DIR}/saves/${SAVE_NAME}.zip ${savename}"; then
+    lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
+    if ! as_user "cp ${lastsave} ${savename}"; then
       echo "Error! Failed to save game"
       exit 1
     fi
@@ -519,6 +531,9 @@ case "$1" in
     ;;
   update)
     update "$2"
+    ;;
+  inv|invocation)
+    echo ${INVOCATION}
     ;;
   help|--help|-h)
     usage
