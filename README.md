@@ -9,10 +9,10 @@ A simple factorio init script for linux
 
  ```bash
  $ /opt/factorio-init invocation
- $ #  Run this as the factorio, example:
+ #  Run this as the factorio user, example:
  $ sudo -u factorio 'whatever invocation gave you'
- $ # You should see some output in your terminal here, hopefully giving
- $ # you a hint of what is going wrong
+ # You should see some output in your terminal here, hopefully giving
+ # you a hint of what is going wrong
  ```
 
 # Install
@@ -47,16 +47,11 @@ A simple factorio init script for linux
 
  ```bash
  $ ln -s /opt/factorio-init/factorio /etc/init.d/factorio
- ```
-- Make the script executable:
-
- ```bash
+ # Make the script executable:
  $ chmod +x /opt/factorio-init/factorio
- ```
-- Try it out!
-
- ```bash
+ # Try it out:
  $ service factorio help
+ # Do not forget to enable the service at boot if you want that.
  ```
 
 # Thank You
