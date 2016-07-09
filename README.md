@@ -8,10 +8,11 @@ A simple factorio init script for linux
  - Try running the same commands as the factorio user (`/opt/factorio-init/factorio invocation` will tell you what the factorio user tries to run at start)
 
  ```bash
- $ cd '/opt/factorio-init'
- $ source ./config  # Grab the config variables
- $ echo $INVOCATION # Does this look correct to you?
- $ $INVOCATION #Start the server, watch the log output for any Errors
+ $ /opt/factorio-init invocation
+ $ #  Run this as the factorio, example:
+ $ sudo -u factorio 'whatever invocation gave you'
+ $ # You should see some output in your terminal here, hopefully giving
+ $ # you a hint of what is going wrong
  ```
 
 # Install
