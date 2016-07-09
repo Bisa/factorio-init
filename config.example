@@ -13,13 +13,10 @@ USERNAME=factorio
 USERGROUP=factorio
 
 # The absolute path to the factorio directory
-FACTORIO_PATH=/path/to/factorio
-# The absolute path to the factorio binary
-BINARY=${FACTORIO_PATH}/bin/x64/factorio
-# Absolute path to factorios config.ini
-FCONF=${FACTORIO_PATH}/config/config.ini
+FACTORIO_PATH=/opt/factorio
 # Server settings file, see data/server-settings.example.json
 SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
+
 # Port on which you want to run the server
 PORT=34197
 
@@ -70,4 +67,3 @@ EXTRA_BINARGS="--allow-commands admin-only"
 # not be altered unless you know what you are doing
 #
 SAVE_NAME=factorio-init-save
-INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${EXTRA_BINARGS}"

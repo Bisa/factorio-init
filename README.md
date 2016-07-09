@@ -5,7 +5,7 @@ A simple factorio init script for linux
  If you find yourself wondering why stuff is not working the way you expect:
  - Check the logs, I suggest you `tail -f /opt/factorio/factorio-current.log` in a separate session
  - Enable debugging in the config and/or:
- - Try running the same commands as the factorio user
+ - Try running the same commands as the factorio user (`/opt/factorio-init/factorio invocation` will tell you what the factorio user tries to run at start)
 
  ```bash
  $ cd '/opt/factorio-init'
