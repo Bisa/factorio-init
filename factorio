@@ -103,7 +103,7 @@ usage(){
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
   echo -e "   cmd command/message \t Send command/chat"
-  echo -e "   new-game \t\t Stops the server and creates a new game"
+  echo -e "   new-game name\t\t Stops the server and creates a new game with the specified name"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   install tarball \t Installs the server with specified tarball"
@@ -283,21 +283,7 @@ install(){
     exit 1
   fi
 
-  if test_deps; then
-    if ! as_user "$BINARY --create ${SAVE_NAME}"; then
-      echo "Installation complete..."
-      echo
-      echo "but failed to create initial save game."
-      echo "Ensure you use: load-save [save-name] before starting the server for the first time."
-    else
-      echo "Install successfull!"
-    fi
-  else
-    echo "Installation complete..."
-    echo
-    echo "but $BINARY is missing required dependencies."
-    echo "Install the missing deps and ensure you use: load-save [save-name] before starting the server for the first time."
-  fi
+  echo "Installation complete, edit the config and start your server"
 }
 
 get_bin_version(){
@@ -478,6 +464,12 @@ case "$1" in
     send_cmd "${@:2}"
     ;;
   new-game)
+    if [ -z $2 ]; then
+      echo "You must specify a save name for your new game"
+      exit 1
+    fi
+    savename="${WRITE_DIR}/saves/$2"
+
     # Stop Service
     if is_running; then
       send_cmd "Generating new save, please stand by"
@@ -487,11 +479,11 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "$BINARY --create ${WRITE_DIR}/saves/${SAVE_NAME}"; then
+    if ! as_user "$BINARY --create ${savename}"; then
       echo "Failed to create new game"
       exit 1
     else
-      echo "New game created"
+      echo "New game created: ${savename}.zip"
     fi
     ;;
 	
@@ -507,7 +499,8 @@ case "$1" in
       fi
     fi
 
-    if ! as_user "cp ${WRITE_DIR}/saves/${SAVE_NAME}.zip ${savename}"; then
+    lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
+    if ! as_user "cp ${lastsave} ${savename}"; then
       echo "Error! Failed to save game"
       exit 1
     fi

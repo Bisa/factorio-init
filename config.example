@@ -61,9 +61,3 @@ UPDATE_TMPDIR=/tmp
 # Extras
 # Additional binary arguments, these will be sent to the binary when issuing the "start" command
 EXTRA_BINARGS="--allow-commands admin-only"
-
-#
-# Refrain from changing the variables below, they are used internally by the script and should
-# not be altered unless you know what you are doing
-#
-SAVE_NAME=factorio-init-save
