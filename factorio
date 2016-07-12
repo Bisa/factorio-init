@@ -40,6 +40,12 @@ if [ -z "${HEADLESS}" ]; then
   HEADLESS=1
 fi
 
+if [ -z "${NONCMDPATTERN}" ]; then
+  # This is a server init script, assume headless default
+  NONCMDPATTERN='^\s*(\s*[0-9]+\.[0-9]+|\)|\()'
+fi
+
+
 if ! [ $1 == "install" ]; then
   if [ -z ${BINARY} ]; then
     # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
@@ -215,8 +221,9 @@ send_cmd(){
       # Wait again, this might need more sleep for larger command output - time will tell (sorry future self for any head aches)
       sleep 1
       # Read the output file backwards - capture everything between the end of file until
-      # factorio tells us our random command id player does not exist
-      response=$(sed "/Player ${cmdid} doesn't exist./q" <(tac ${CMDOUT})| grep -v ${cmdid})
+      # factorio tells us our random command id player does not exist.
+      # This also attempts to filter all non chat/command lines from the output
+      response=$(sed "/Player ${cmdid} doesn't exist./q" <(tac ${CMDOUT}) |egrep -v "(${cmdid})|${NONCMDPATTERN}")
       echo "${response}"
     else
       echo "${FIFO} is not a pipe!"
