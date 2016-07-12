@@ -42,7 +42,7 @@ fi
 
 if [ -z "${NONCMDPATTERN}" ]; then
   # This is a server init script, assume headless default
-  NONCMDPATTERN='^\s*(\s*[0-9]+\.[0-9]+|\)|\()'
+  NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
 fi
 
 
@@ -112,8 +112,10 @@ usage(){
   echo -e "   stop \t\t Stops the server"
   echo -e "   restart \t\t Restarts the server"
   echo -e "   status \t\t Displays server status"
+  echo -e "   players-online \t Shows online players"
+  echo -e "   players \t\t Shows all players"
   echo -e "   cmd command/message \t Send command/chat"
-  echo -e "   new-game name\t\t Stops the server and creates a new game with the specified name"
+  echo -e "   new-game name\t Stops the server and creates a new game with the specified name"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   install tarball \t Installs the server with specified tarball"
@@ -232,6 +234,20 @@ send_cmd(){
   else
     echo "Unable to send cmd to a stopped server!"
     return 1
+  fi
+}
+
+cmd_players(){
+  players=$(send_cmd "/p")
+  if [ -z "${players}" ]; then
+    echo "No players found!"
+    return 1
+  fi
+
+  if [ "$1" == "online" ]; then
+    echo "${players}" |egrep '.+ \(online\)$' |sed -e 's/ (online)//g'
+  else
+    echo "${players}"
   fi
 }
 
@@ -489,6 +505,12 @@ case "$1" in
     ;;
   cmd)
     send_cmd "${@:2}"
+    ;;
+  players)
+    cmd_players
+    ;;
+  players-online|online)
+    cmd_players online
     ;;
   new-game)
     if [ -z $2 ]; then
