@@ -209,11 +209,11 @@ send_cmd(){
       # Whisper that unknown player named after our random id
       echo "/w ${cmdid}" > ${FIFO}
       # Wait for factorio to read stdin
-      sleep 0.5
+      sleep 1
       # Run the actual command
       echo $@ > ${FIFO}
       # Wait again, this might need more sleep for larger command output - time will tell (sorry future self for any head aches)
-      sleep 0.5
+      sleep 1
       # Read the output file backwards - capture everything between the end of file until
       # factorio tells us our random command id player does not exist
       response=$(sed "/Player ${cmdid} doesn't exist./q" <(tac ${CMDOUT})| grep -v ${cmdid})
