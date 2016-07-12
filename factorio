@@ -89,6 +89,10 @@ if ! [ $1 == "install" ]; then
     FIFO="${WRITE_DIR}/server.fifo"
   fi
 
+  if [ -z "${CMDOUT}" ];then
+    CMDOUT="${WRITE_DIR}/server.out"
+  fi
+
   # Finally, set up the invocation
   INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${RCON} ${EXTRA_BINARGS}"
 
@@ -151,7 +155,7 @@ start_service() {
     return 1
   fi
 
-  as_user "tail -f ${FIFO} |${INVOCATION} > /dev/null 2>&1 & echo \$! > ${PIDFILE}"
+  as_user "tail -f ${FIFO} |${INVOCATION} > ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -200,9 +204,20 @@ stop_service() {
 send_cmd(){
   if is_running; then
     if [ -p ${FIFO} ]; then
-      echo $@
+      # Grab a random 16 character id for our command
+      cmdid=$(cat /dev/urandom |tr -dc 'a-zA-Z0-9' |fold -w 16 |head -n 1)
+      # Whisper that unknown player named after our random id
+      echo "/w ${cmdid}" > ${FIFO}
+      # Wait for factorio to read stdin
+      sleep 0.5
+      # Run the actual command
       echo $@ > ${FIFO}
-      sleep 1
+      # Wait again, this might need more sleep for larger command output - time will tell (sorry future self for any head aches)
+      sleep 0.5
+      # Read the output file backwards - capture everything between the end of file until
+      # factorio tells us our random command id player does not exist
+      response=$(sed "/Player ${cmdid} doesn't exist./q" <(tac ${CMDOUT})| grep -v ${cmdid})
+      echo "${response}"
     else
       echo "${FIFO} is not a pipe!"
       return 1
@@ -234,6 +249,11 @@ check_permissions(){
       echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
       exit 1
     fi
+  fi
+
+  if ! as_user "touch ${CMDOUT}" ; then
+    echo "Check Permissions. Cannot touch cmd output file ${CMDOUT}"
+    exit 1
   fi
 }
 
