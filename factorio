@@ -115,6 +115,7 @@ usage(){
   echo -e "   players-online \t Shows online players"
   echo -e "   players \t\t Shows all players"
   echo -e "   cmd [command/message] \t Open interactive commandline or send a single command to the server"
+  echo -e "   chatlog [--tail|-t] \t\t Print the current chatlog, optionally tail the log to follow in real time"
   echo -e "   new-game name\t Stops the server and creates a new game with the specified name"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
@@ -505,14 +506,10 @@ case "$1" in
     ;;
   cmd)
     if [ -z "$2" ]; then
-      tail -F -n 0 ${CMDOUT} |egrep -v "${NONCMDPATTERN}" &
-      trap 'clear && kill $(jobs -p)' SIGTERM EXIT
+      trap 'clear' SIGTERM EXIT
 
       clear
-      echo "Type any command or chat with the players online here."
-      echo "(Note that output/input will be garbled if you have an active chat"
-      echo "try using \"$0 cmd 'command'\" togheter with tailing the logfile instead)"
-      echo ""
+      echo "Type any command or send chat messages"
       echo "This interactive commandline adds additional commands:"
       echo ""
       echo -e "\texit\t\texit the commandline"
@@ -529,6 +526,16 @@ case "$1" in
     else
       send_cmd "${@:2}"
     fi
+    ;;
+  chatlog)
+    case $2 in
+      --tail|-t)
+        tail -F -n +0 ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
+        ;;
+      *)
+        cat ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
+        ;;
+    esac
     ;;
   players)
     cmd_players
