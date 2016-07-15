@@ -517,7 +517,7 @@ case "$1" in
       echo ""
 
       while true; do
-        read -p "server@${SERVICE_NAME}> " cmd
+        read -e -p "server@${SERVICE_NAME}> " cmd
         [ "${cmd}" == "exit" ] && exit 0
         [ "${cmd}" == "clear" ] && clear && continue
         echo ${cmd} > ${FIFO}
