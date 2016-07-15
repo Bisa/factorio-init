@@ -99,6 +99,10 @@ if ! [ $1 == "install" ]; then
     CMDOUT="${WRITE_DIR}/server.out"
   fi
 
+  if [ -z "${SAVELOG}" ]; then
+    SAVELOG=0
+  fi
+
   # Finally, set up the invocation
   INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${RCON} ${EXTRA_BINARGS}"
 
@@ -164,7 +168,12 @@ start_service() {
     return 1
   fi
 
-  as_user "tail -f ${FIFO} |${INVOCATION} > ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
+  if [ "${SAVELOG}" ==  "0" ]; then
+    debug "Erasing log ${CMDOUT}"
+    echo "" > ${CMDOUT}
+  fi
+
+  as_user "tail -f ${FIFO} |${INVOCATION} >> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
