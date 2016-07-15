@@ -31,6 +31,11 @@ AUTOSAVE_INTERVAL=10
 # The number of autosaves to use for rotation
 AUTOSAVE_SLOTS=3
 
+# Save the command/chat/log on server start? Default location /opt/factorio/server.out 
+# Setting this to 0 will cause the script to erase the log file on each start
+# If you set this to 1 you might want to apply logrotate on the log or it will eventually fill your disk
+SAVELOG=0
+
 # Factorio comes packaged in a tarball containing the directory named "factorio"
 # when using this scripts update/install command we expect to see this very
 # directory. If you want to supply your own update/install tar other than what you can download
