@@ -46,7 +46,7 @@ if [ -z "${NONCMDPATTERN}" ]; then
 fi
 
 
-if ! [ $1 == "install" ]; then
+if ! [ "$1" == "install" ]; then
   if [ -z ${BINARY} ]; then
     # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
     BINARY="${FACTORIO_PATH}/bin/x64/factorio"
@@ -61,7 +61,7 @@ if ! [ $1 == "install" ]; then
   if [ -z ${FCONF} ]; then
     FCONF="${FACTORIO_PATH}/config/config.ini"
   fi
-  
+
   if ! [ -e "${SERVER_SETTINGS}" ]; then
     echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
     echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
@@ -200,7 +200,7 @@ stop_service() {
         else
           break
         fi
-        sec=$(($sec+1)) 
+        sec=$(($sec+1))
       done
     fi
 
@@ -360,25 +360,25 @@ update(){
     dryrun=1
   else
     dryrun=0
-  fi  
+  fi
 
   if [ ${HEADLESS} -gt 0 ]; then
     package="core-linux_headless`get_bin_arch`"
   else
     package="core-linux`get_bin_arch`"
   fi
-  
+
   version=`get_bin_version`
   if [ -z "${UPDATE_TMPDIR}" ]; then
     UPDATE_TMPDIR=/tmp
   fi
-  
+
   tmpdir="${UPDATE_TMPDIR}/factorio-update"
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
   fi
-  
+
   if [ ${HEADLESS} -eq 0 ]; then
     #GoodGuy Wube Software allows you to download the headless for free - yay! but you still have to
     #buy the game if you want to download the sound/gfx client
@@ -403,9 +403,9 @@ update(){
   fi
 
   # Go or no Go?
-  if [ ${dryrun} -gt 0 ]; then 
+  if [ ${dryrun} -gt 0 ]; then
     echo "Dry run, not taking further actions!"
-    # allow scripts to read return code 0 for no updates and 2 if there are updates to apply 
+    # allow scripts to read return code 0 for no updates and 2 if there are updates to apply
     if ! [ -z "${newversion}" ]; then
       exit 2
     fi
@@ -429,7 +429,7 @@ update(){
     rm -rf ${tmpdir}
     exit 1
   fi
-  
+
   # Stop the server if it is running.
   if is_running; then
     send_cmd "Updating to new Factorio version, be right back"
@@ -575,7 +575,7 @@ case "$1" in
       echo "New game created: ${savename}.zip"
     fi
     ;;
-	
+
   save-game)
     savename="${WRITE_DIR}/saves/$2.zip"
 
