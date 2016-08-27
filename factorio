@@ -104,7 +104,7 @@ if ! [ "$1" == "install" ]; then
   fi
 
   # Finally, set up the invocation
-  INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} --latency-ms ${LATENCY} ${RCON} ${EXTRA_BINARGS}"
+  INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} ${RCON} ${EXTRA_BINARGS}"
 
 fi
 
