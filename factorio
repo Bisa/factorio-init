@@ -118,14 +118,17 @@ usage(){
   echo -e "   status \t\t Displays server status"
   echo -e "   players-online \t Shows online players"
   echo -e "   players \t\t Shows all players"
-  echo -e "   cmd [command/message] \t Open interactive commandline or send a single command to the server"
-  echo -e "   chatlog [--tail|-t] \t\t Print the current chatlog, optionally tail the log to follow in real time"
+  echo -e "   cmd [command/message] Open interactive commandline or send a single command to the server"
+  echo -e "   chatlog [--tail|-t]   Print the current chatlog, optionally tail the log to follow in real time"
   echo -e "   new-game name\t Stops the server and creates a new game with the specified name"
   echo -e "   save-game name \t Stops the server and saves game to specified save"
   echo -e "   load-save name \t Stops the server and loads the specified save"
   echo -e "   install tarball \t Installs the server with specified tarball"
   echo -e "   update [--dry-run] \t Updates the server"
   echo -e "   invocation \t\t Outputs the invocation for debugging purpose"
+  echo -e "   listcommands \t List all init-commands"
+  echo -e "   listsaves \t\t List all saves"
+  echo -e "   help \t\t Shows this help message"
 }
 
 ME=`whoami`
@@ -626,6 +629,12 @@ case "$1" in
     ;;
   help|--help|-h)
     usage
+    ;;
+  listcommands)
+    echo `$0 help 2> /dev/null |egrep '^   ' |awk '{ print $1 }'`
+    ;;
+  listsaves)
+    echo `find ${WRITE_DIR} -type f |egrep -o '\w+\.zip$' |sed -e 's/.zip//'`
     ;;
   *)
     echo "No such command!"
