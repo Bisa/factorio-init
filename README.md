@@ -28,9 +28,9 @@ A simple factorio init script for linux
 - Copy/Symlink or source the bash_autocompletion file
 
  ```bash
- $ ln -s /opt/factorio-init/bash_autocompletion /etc/bash_completion.d/factorio
+ $ ln -s /opt/factorio-init/bash_autocomplete /etc/bash_completion.d/factorio
  # OR:
- $ echo "source /opt/factorio-init/bash_autocompletion" >> ~/.bashrc
+ $ echo "source /opt/factorio-init/bash_autocomplete" >> ~/.bashrc
  # restart your shell to verify that it worked
  ```
 
