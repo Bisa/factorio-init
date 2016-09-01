@@ -24,6 +24,16 @@ A simple factorio init script for linux
  ```
 - Rename config.example to config and modify the values within according to your setup.
 
+## Autocompletion
+- Copy/Symlink or source the bash_autocompletion file
+
+ ```bash
+ $ ln -s /opt/factorio-init/bash_autocompletion /etc/bash_completion.d/factorio
+ # OR:
+ $ echo "source /opt/factorio-init/bash_autocompletion" >> ~/.bashrc
+ # restart your shell to verify that it worked
+ ```
+
 ## Systemd
 - Copy the example service, adjust & reload
 

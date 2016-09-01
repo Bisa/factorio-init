@@ -1,0 +1,30 @@
+_factorio() 
+{
+    local cur prev opts base
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    # basic options
+    opts=`factorio listcommands 2> /dev/null`
+
+    # command arguments
+    case "${prev}" in
+        chatlog)
+            COMPREPLY=( $(compgen -W "-t --tail" -- ${cur}) )
+            return 0
+            ;;
+        update)
+            COMPREPLY=( $(compgen -W "--dry-run" -- ${cur}) )
+            return 0
+            ;;
+        new-game|load-save|save-game)
+            COMPREPLY=( $(compgen -W "`factorio listsaves 2> /dev/null`" -- ${cur}) )
+            return 0
+            ;;
+    esac
+
+    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))  
+    return 0
+}
+complete -F _factorio factorio
