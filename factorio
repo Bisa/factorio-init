@@ -128,6 +128,7 @@ usage(){
   echo -e "   invocation \t\t Outputs the invocation for debugging purpose"
   echo -e "   listcommands \t List all init-commands"
   echo -e "   listsaves \t\t List all saves"
+  echo -e "   version \t\t Prints the binary version"
   echo -e "   help \t\t Shows this help message"
 }
 
@@ -635,6 +636,9 @@ case "$1" in
     ;;
   listsaves)
     echo `find ${WRITE_DIR} -type f |egrep -o '\w+\.zip$' |sed -e 's/.zip//'`
+    ;;
+  version)
+    echo `get_bin_version`
     ;;
   *)
     echo "No such command!"
