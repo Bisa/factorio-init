@@ -215,6 +215,8 @@ stop_service() {
       echo "complete!"
     fi
 
+    # Write a newline to the pipe, this triggers a SIGPIPE and causes tail to exit
+    echo "" > ${FIFO}
     rm ${PIDFILE} 2> /dev/null
     return 0 # we've either shut down gracefully or killed the process
   else
