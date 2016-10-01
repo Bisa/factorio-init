@@ -103,8 +103,16 @@ if ! [ "$1" == "install" ]; then
     SAVELOG=0
   fi
 
+  if [ -z "${START_SERVER_ARG}" ]; then
+    if [ -z "${SAVE_PATH}" ]; then
+      START_SERVER_ARG="--start-server-load-latest"
+    else
+      START_SERVER_ARG="--start-server ${SAVE_PATH}"
+    fi
+  fi
+
   # Finally, set up the invocation
-  INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --autosave-interval ${AUTOSAVE_INTERVAL} --autosave-slots ${AUTOSAVE_SLOTS} ${RCON} ${EXTRA_BINARGS}"
+  INVOCATION="${BINARY} ${START_SERVER_ARG} --config ${FCONF} --port ${PORT} --server-settings ${SERVER_SETTINGS} ${RCON} ${EXTRA_BINARGS}"
 
 fi
 

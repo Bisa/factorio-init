@@ -17,13 +17,20 @@ FACTORIO_PATH=/opt/factorio
 # Server settings file, see data/server-settings.example.json
 SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 
+# The path to your save file. If undefined, uses --start-server-load-latest.
+#SAVE_PATH=${FACTORIO_PATH}/saves/map.zip
+
+# Overrides any other --start-server* arguments, use for scenarios etc
+#START_SERVER_ARG=--start-server-load-latest
+
 # Port on which you want to run the server
 PORT=34197
 
-# The number of minutes between each autosave
-AUTOSAVE_INTERVAL=10
-# The number of autosaves to use for rotation
-AUTOSAVE_SLOTS=3
+# Deprecated since 0.14.12, define them in your server-settings.json instead
+## The number of minutes between each autosave
+##AUTOSAVE_INTERVAL=10
+## The number of autosaves to use for rotation
+##AUTOSAVE_SLOTS=3
 
 # Save the command/chat/log on server start? Default location /opt/factorio/server.out 
 # Setting this to 0 will cause the script to erase the log file on each start
