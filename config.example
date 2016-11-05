@@ -20,11 +20,6 @@ SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 # Port on which you want to run the server
 PORT=34197
 
-# The number of minutes between each autosave
-AUTOSAVE_INTERVAL=10
-# The number of autosaves to use for rotation
-AUTOSAVE_SLOTS=3
-
 # Save the command/chat/log on server start? Default location /opt/factorio/server.out 
 # Setting this to 0 will cause the script to erase the log file on each start
 # If you set this to 1 you might want to apply logrotate on the log or it will eventually fill your disk
@@ -59,4 +54,4 @@ UPDATE_TMPDIR=/tmp
 
 # Extras
 # Additional binary arguments, these will be sent to the binary when issuing the "start" command
-EXTRA_BINARGS="--allow-commands admins-only"
+EXTRA_BINARGS=""
