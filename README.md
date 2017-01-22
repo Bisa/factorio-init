@@ -8,7 +8,7 @@ A simple factorio init script for linux
  - Try running the same commands as the factorio user (`/opt/factorio-init/factorio invocation` will tell you what the factorio user tries to run at start)
 
  ```bash
- $ /opt/factorio-init invocation
+ $ /opt/factorio-init/factorio invocation
  #  Run this as the factorio user, example:
  $ sudo -u factorio 'whatever invocation gave you'
  # You should see some output in your terminal here, hopefully giving
