@@ -134,10 +134,16 @@ usage(){
 
 ME=`whoami`
 as_user() {
-  if [ $ME == $USERNAME ]; then
+  if [ $ME == $USERNAME ]; then # Are we the factorio user?
     bash -c "$1"
-  else
+  elif [ "$(id -u)" == "0" ]; then # Are we root?
     su $USERNAME -s /bin/bash -c "$1"
+  else
+    # To prevent odd permission behaviour, either
+    # run this script as the configured user or as root
+    # (please do not run as root btw!)
+    echo "Run this script as the $USERNAME user!"
+    exit 1
   fi
 }
 
