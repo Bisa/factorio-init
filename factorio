@@ -241,9 +241,8 @@ stop_service() {
 send_cmd(){
   if is_running; then
     if [ -p ${FIFO} ]; then
-      # Grab a random 16 character id for our command
-      cmdid=$(cat /dev/urandom |tr -dc 'a-zA-Z0-9' |fold -w 16 |head -n 1)
-      # Whisper that unknown player named after our random id
+      cmdid="FACTORIO_INIT_CMD_DELIMITER"
+      # Whisper that unknown player
       echo "/w ${cmdid}" > ${FIFO}
       # Wait for factorio to read stdin
       sleep 1
