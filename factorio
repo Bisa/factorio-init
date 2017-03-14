@@ -221,8 +221,15 @@ stop_service() {
       echo "complete!"
     fi
 
+    # Start the reader (in case tail stopped already)
+    cat ${FIFO} &
+    # Open pipe for writing.
+    exec 3> ${FIFO}
     # Write a newline to the pipe, this triggers a SIGPIPE and causes tail to exit
-    echo "" > ${FIFO}
+    echo "" >&3
+    # Close pipe.
+    exec 3>&-
+
     rm ${PIDFILE} 2> /dev/null
     return 0 # we've either shut down gracefully or killed the process
   else
