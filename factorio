@@ -197,11 +197,11 @@ start_service() {
 stop_service() {
   if [ -e ${PIDFILE} ]; then
     echo -n "Stopping ${SERVICE_NAME}: "
-    if kill -TERM $(cat ${PIDFILE}) 2> /dev/null; then
+    if kill -TERM $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
       sec=1
       while [ "$sec" -le 15 ]; do
         if [ -e ${PIDFILE} ]; then
-          if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+          if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
             echo -n ". "
             sleep 1
           else
@@ -214,9 +214,9 @@ stop_service() {
       done
     fi
 
-    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
+    if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
       echo "Unable to shut down nicely, killing the process!"
-      kill -KILL $(cat ${PIDFILE}) 2> /dev/null
+      kill -KILL $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null
     else
       echo "complete!"
     fi
