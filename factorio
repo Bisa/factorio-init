@@ -39,75 +39,77 @@ if [ -z "${HEADLESS}" ]; then
   # This is a server init script, assume headless default
   HEADLESS=1
 fi
-
+if [ -z "${LATEST_HEADLESS_URL}" ]; then
+  LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
+fi
 if [ -z "${NONCMDPATTERN}" ]; then
-  # This is a server init script, assume headless default
   NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
 fi
-
-
-if ! [ "$1" == "install" ]; then
-  if [ -z ${BINARY} ]; then
-    # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
-    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
-  fi
-
-  if ! [ -e ${BINARY} ]; then
-    echo "Could not find factorio binary! ${BINARY}"
-    echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
-    exit 1
-  fi
-
-  if [ -z ${FCONF} ]; then
-    FCONF="${FACTORIO_PATH}/config/config.ini"
-  fi
-
-  if ! [ -e "${SERVER_SETTINGS}" ]; then
-    echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
-    echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
-    exit 1
-  fi
-
-  if ! [ -e ${FCONF} ]; then
-    echo "Could not find factorio config file: ${FCONF}"
-    echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
-    echo "(also make sure you have a save to run or the server will not start)"
-    echo
-    echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame"
-    echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest"
-    echo
-    echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
-    exit 1
-  fi
-  if [ -z "${WRITE_DIR}" ]; then
-    # figure out the write-data path (where factorio looks for saves and mods)
-    # Note - this is a hefty little operation, possible cause of head ache down the road
-    # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
-    # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
-    debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
-    WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
-  fi
-  debug "write path: $WRITE_DIR"
-
-  PIDFILE="${WRITE_DIR}/server.pid"
-
-  if [ -z "${FIFO}" ];then
-    FIFO="${WRITE_DIR}/server.fifo"
-  fi
-
-  if [ -z "${CMDOUT}" ];then
-    CMDOUT="${WRITE_DIR}/server.out"
-  fi
-
-  if [ -z "${SAVELOG}" ]; then
-    SAVELOG=0
-  fi
-
-  # Finally, set up the invocation
-  INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${RCON} ${EXTRA_BINARGS}"
-
+if [ -z ${BINARY} ]; then
+  # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
+  BINARY="${FACTORIO_PATH}/bin/x64/factorio"
 fi
 
+case "$1" in
+  install|help|listcommands|version|"")
+    ;;
+  *)
+    if ! [ -e ${BINARY} ]; then
+      echo "Could not find factorio binary! ${BINARY}"
+      echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
+      exit 1
+    fi
+  
+    if [ -z ${FCONF} ]; then
+      FCONF="${FACTORIO_PATH}/config/config.ini"
+    fi
+  
+    if ! [ -e "${SERVER_SETTINGS}" ]; then
+      echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
+      echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
+      exit 1
+    fi
+  
+    if ! [ -e ${FCONF} ]; then
+      echo "Could not find factorio config file: ${FCONF}"
+      echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
+      echo "(also make sure you have a save to run or the server will not start)"
+      echo
+      echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame"
+      echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest"
+      echo
+      echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
+      exit 1
+    fi
+    if [ -z "${WRITE_DIR}" ]; then
+      # figure out the write-data path (where factorio looks for saves and mods)
+      # Note - this is a hefty little operation, possible cause of head ache down the road
+      # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
+      # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
+      debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
+      WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
+    fi
+    debug "write path: $WRITE_DIR"
+  
+    PIDFILE="${WRITE_DIR}/server.pid"
+  
+    if [ -z "${FIFO}" ];then
+      FIFO="${WRITE_DIR}/server.fifo"
+    fi
+  
+    if [ -z "${CMDOUT}" ];then
+      CMDOUT="${WRITE_DIR}/server.out"
+    fi
+  
+    if [ -z "${SAVELOG}" ]; then
+      SAVELOG=0
+    fi
+  
+    # Finally, set up the invocation
+    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${RCON} ${EXTRA_BINARGS}"
+    ;;
+esac
+  
 usage(){
   echo "Usage: $0 COMMAND"
   echo
@@ -123,7 +125,7 @@ usage(){
   echo -e "   new-game name [map-gen-settings] \t Stops the server and creates a new game with the specified name using the specified map gen settings json file"
   echo -e "   save-game name \t\t\t Stops the server and saves game to specified save"
   echo -e "   load-save name \t\t\t Stops the server and loads the specified save"
-  echo -e "   install tarball \t\t\t Installs the server with specified tarball"
+  echo -e "   install [tarball] \t\t\t Installs the server with optional specified tarball (omit to download and use the latest headless server from Wube)"
   echo -e "   update [--dry-run] \t\t\t Updates the server"
   echo -e "   invocation \t\t\t\t Outputs the invocation for debugging purpose"
   echo -e "   listcommands \t\t\t List all init-commands"
@@ -323,16 +325,20 @@ install(){
     exit 1
   fi
 
-  # Prevent accitential overwrites
+  # Prevent accidential overwrites
   if [ -e "${expected_path}" ]; then
     echo "Aborting install, ${FACTORIO_PATH} already exists"
     exit 1
   fi
 
   tarball=$1
-  if ! [ -f "${tarball}" ]; then
-    echo "Install package does not exist! ${tarball}"
-    exit 1
+  if ! [ -z "$tarball" ]; then
+    if ! [ -f "${tarball}" ]; then
+      echo "Install package does not exist! ${tarball}"
+      exit 1
+    fi
+  else
+    downloadlatest=1
   fi
 
   target="`dirname ${FACTORIO_PATH}`"
@@ -342,10 +348,17 @@ install(){
     exit 1
   fi
 
-  echo "Installing ${tarball} ..."
-  if ! tar -xzvf "${tarball}" --directory "${target}"; then
-    echo "Install failed!"
-    exit 1
+  if [ $downloadlatest ]; then
+    if ! wget ${LATEST_HEADLESS_URL} -O - | tar -xzv --directory "${target}"; then
+      echo "Install failed!"
+      exit 1
+    fi
+  else
+    echo "Installing ${tarball} ..."
+    if ! tar -xzvf "${tarball}" --directory "${target}"; then
+      echo "Install failed!"
+      exit 1
+    fi
   fi
 
   echo "Applying file ownership ..."
@@ -354,7 +367,15 @@ install(){
     exit 1
   fi
 
-  echo "Installation complete, edit the config and start your server"
+  # Generate default config.ini by creating a save
+  as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save"
+  if [ $? -eq 0 ]; then
+    echo "Installation complete, edit data/server-settings.json and start your server"
+    exit 0
+  else
+    echo "Failed to create save, review the output above to recover"
+    exit 1
+  fi
 }
 
 get_bin_version(){
