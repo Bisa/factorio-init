@@ -349,13 +349,24 @@ install(){
   fi
 
   if [ $downloadlatest ]; then
-    if ! wget ${LATEST_HEADLESS_URL} -O - | tar -xzv --directory "${target}"; then
+    LATEST_HEADLESS_URL_REDIRECT_FILENAME=$(curl ${LATEST_HEADLESS_URL} -s -L -I -o /dev/null -w '%{url_effective}')
+    if [[ $LATEST_HEADLESS_URL_REDIRECT_FILENAME == *"tar.xz"* ]]; then 
+      TAR_OPTIONS="-xJv"
+    else
+      TAR_OPTIONS="-xzv"
+    fi
+    if ! wget ${LATEST_HEADLESS_URL} -O - | tar ${TAR_OPTIONS} --directory "${target}"; then
       echo "Install failed!"
       exit 1
     fi
   else
     echo "Installing ${tarball} ..."
-    if ! tar -xzvf "${tarball}" --directory "${target}"; then
+    if [[ $tarball == *"tar.xz"* ]]; then 
+      TAR_OPTIONS="-xJvf"
+    else
+      TAR_OPTIONS="-xzvf"
+    fi
+    if ! tar ${TAR_OPTIONS} "${tarball}" --directory "${target}"; then
       echo "Install failed!"
       exit 1
     fi
