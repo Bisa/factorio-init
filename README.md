@@ -24,6 +24,14 @@ A simple factorio init script for linux
  ```
 - Rename config.example to config and modify the values within according to your setup.
 
+## User
+
+- Create a new user account on your server which will run factorio. Do not run it as root!
+
+```bash
+$ adduser --disabled-login --no-create-home --gecos factorio factorio
+```
+
 ## Autocompletion
 - Copy/Symlink or source the bash_autocompletion file
 
@@ -63,6 +71,46 @@ A simple factorio init script for linux
  $ service factorio help
  # Do not forget to enable the service at boot if you want that.
  ```
+
+## Prepare the game
+
+- Download the latest headless factorio server and install it in /opt/factorio
+
+```bash
+$ service factorio install
+```
+
+- If needed, make a mods folder, and upload your mods
+
+```bash
+$ mkdir /opt/factorio/mods
+# now upload your mods to this folder
+```
+
+- If needed, upload your existing save file to /opt/factorio/saves
+
+- Do not forget: if you uploaded mods or save files, make sure the 'factorio' user can access them
+
+```bash
+$ sudo chown -R factorio:factorio /opt/factorio
+```
+
+- Update the factorio settings file, found in /opt/factorio/data
+
+```bash
+$ cd /opt/factorio/data
+$ cp server-settings.example.json server-settings.json
+# update the settings to whatever you like
+$ nano server-settings.json
+```
+
+- Load the save file if you want to use it
+
+```bash
+$ service factorio load-save your-file-name-without-zip-extension
+# restart the factorio service because the command above stopped it
+$ service factorio start
+```
 
 # Thank You
 - To all who find this script useful in one way or the other
