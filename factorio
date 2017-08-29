@@ -608,7 +608,7 @@ case "$1" in
       exit 1
     fi
     savename="${WRITE_DIR}/saves/$2"
-    createsavecmd="$BINARY --create ${savename}"
+    createsavecmd="$BINARY --create \"${savename}\""
 
     # Check if user wants to use custom map gen settings
     if [ $3 ]; then
