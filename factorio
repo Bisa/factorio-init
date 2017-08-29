@@ -674,7 +674,7 @@ case "$1" in
     fi
 
     # Touch the new save file
-    as_user "touch ${newsave}"
+    as_user "touch \"${newsave}\""
     ;;
   install)
     install "$2"
