@@ -650,7 +650,7 @@ case "$1" in
     fi
 
     lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-    if ! as_user "cp ${lastsave} ${savename}"; then
+    if ! as_user "cp \"${lastsave}\" \"${savename}\""; then
       echo "Error! Failed to save game"
       exit 1
     fi
