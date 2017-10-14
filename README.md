@@ -24,6 +24,17 @@ A simple factorio init script for linux
  ```
 - Rename config.example to config and modify the values within according to your setup.
 
+## First-run
+- If you don't have Factorio installed already, use the `install` command:
+
+ ```bash
+ $ /opt/factorio-init/factorio install  # see help for options
+ ```
+
+- The installation routine creates Factorio's `config.ini` automatically.
+
+- If you previously ran Factorio without this script, the existing `config.ini` should work fine.
+
 ## Autocompletion
 - Copy/Symlink or source the bash_autocompletion file
 
