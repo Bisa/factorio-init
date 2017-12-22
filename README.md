@@ -1,5 +1,5 @@
 # Factorio Init Script
-A simple factorio init script for linux
+A factorio init script for linux
 
 # Debugging
  If you find yourself wondering why stuff is not working the way you expect:
