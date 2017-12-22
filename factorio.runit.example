@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+FACTORIO_USER="factorio";
+FACTORIO_GROUP="factorio";
+
+exec chpst -u "${FACTORIO_USER}:${FACTORIO_GROUP}" factorio foreground
