@@ -244,7 +244,7 @@ foreground_service() {
     kill $fifo_open;
 
     # Exit with the same exit code factorio did
-    exit $?;
+    exit $exit_code;
 }
 
 stop_service() {
