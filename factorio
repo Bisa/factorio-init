@@ -481,7 +481,9 @@ update(){
   fi
 
   # Stop the server if it is running.
-  if is_running; then
+  is_running
+  was_running=$?
+  if [ ${was_running} -eq 0 ]; then
     send_cmd "Updating to new Factorio version, be right back"
     stop_service
   fi
@@ -499,6 +501,11 @@ update(){
       exit 1
     fi
   done
+  
+  # Restarts the server if it was running
+  if [ ${was_running} -eq 0 ]; then
+    start_service
+  fi
 
   echo "Successfully updated factorio"
   rm -rf ${tmpdir}
