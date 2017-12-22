@@ -615,7 +615,7 @@ case "$1" in
       exit 1
     fi
     savename="${WRITE_DIR}/saves/$2"
-    createsavecmd="$BINARY --create ${savename}"
+    createsavecmd="$BINARY --create \"${savename}\""
 
     # Check if user wants to use custom map gen settings
     if [ $3 ]; then
@@ -667,7 +667,7 @@ case "$1" in
     fi
 
     lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-    if ! as_user "cp ${lastsave} ${savename}"; then
+    if ! as_user "cp \"${lastsave}\" \"${savename}\""; then
       echo "Error! Failed to save game"
       exit 1
     fi
@@ -691,7 +691,7 @@ case "$1" in
     fi
 
     # Touch the new save file
-    as_user "touch ${newsave}"
+    as_user "touch \"${newsave}\""
     ;;
   install)
     install "$2"
@@ -709,7 +709,7 @@ case "$1" in
     echo `$0 help 2> /dev/null |egrep '^   ' |awk '{ print $1 }'`
     ;;
   listsaves)
-    echo `find ${WRITE_DIR} -type f |egrep -o '\w+\.zip$' |sed -e 's/.zip//'`
+    find ${WRITE_DIR} -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
     ;;
   version)
     echo `get_bin_version`
