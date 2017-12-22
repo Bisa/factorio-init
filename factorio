@@ -122,7 +122,7 @@ usage(){
   echo -e "   players \t\t\t\t Shows all players"
   echo -e "   cmd [command/message] \t\t Open interactive commandline or send a single command to the server"
   echo -e "   chatlog [--tail|-t] \t\t\t Print the current chatlog, optionally tail the log to follow in real time"
-  echo -e "   new-game name [map-gen-settings] \t Stops the server and creates a new game with the specified name using the specified map gen settings json file"
+  echo -e "   new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified name using the specified map gen settings and map settings json files"
   echo -e "   save-game name \t\t\t Stops the server and saves game to specified save"
   echo -e "   load-save name \t\t\t Stops the server and loads the specified save"
   echo -e "   install [tarball] \t\t\t Installs the server with optional specified tarball (omit to download and use the latest headless server from Wube)"
@@ -623,6 +623,16 @@ case "$1" in
         createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/$3"
       else
         echo "Specified map gen settings json does not exist"
+        exit 1
+      fi
+    fi
+
+    # Check if user wants to use custom map settings
+    if [ $4 ]; then
+      if [ -e "${WRITE_DIR}/$4" ]; then
+        createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/$4"
+      else
+        echo "Specified map settings json does not exist"
         exit 1
       fi
     fi
