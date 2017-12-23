@@ -1,6 +1,7 @@
 [Unit]
 Description=Factorio Server
-After=network.target
+Wants=network-online.target
+After=network.target network-online.target
 
 [Service]
 User=factorio
