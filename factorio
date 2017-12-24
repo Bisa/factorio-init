@@ -438,7 +438,9 @@ update(){
   echo "Checking for updates..."
   result=`as_user "${invocation} --dry-run"`
   exitcode=$?
-  if [ ${exitcode} -gt 0 ]; then
+  if [ ${exitcode} -eq 1 -o ${exitcode} -gt 2 ]; then
+    debug "Invocation: ${invocation}"
+    debug "${result}"
     echo "Update check failed!"
     exit 1
   else
