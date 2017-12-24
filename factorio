@@ -59,17 +59,17 @@ case "$1" in
       echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
       exit 1
     fi
-
+  
     if [ -z ${FCONF} ]; then
       FCONF="${FACTORIO_PATH}/config/config.ini"
     fi
-
+  
     if ! [ -e "${SERVER_SETTINGS}" ]; then
       echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
       echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
       exit 1
     fi
-
+  
     if ! [ -e ${FCONF} ]; then
       echo "Could not find factorio config file: ${FCONF}"
       echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
@@ -90,26 +90,26 @@ case "$1" in
       WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
     fi
     debug "write path: $WRITE_DIR"
-
+  
     PIDFILE="${WRITE_DIR}/server.pid"
-
+  
     if [ -z "${FIFO}" ];then
       FIFO="${WRITE_DIR}/server.fifo"
     fi
-
+  
     if [ -z "${CMDOUT}" ];then
       CMDOUT="${WRITE_DIR}/server.out"
     fi
-
+  
     if [ -z "${SAVELOG}" ]; then
       SAVELOG=0
     fi
-
+  
     # Finally, set up the invocation
     INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${RCON} ${EXTRA_BINARGS}"
     ;;
 esac
-
+  
 usage(){
   echo "Usage: $0 COMMAND"
   echo
@@ -117,7 +117,6 @@ usage(){
   echo -e "   start \t\t\t\t Starts the server"
   echo -e "   stop \t\t\t\t Stops the server"
   echo -e "   restart \t\t\t\t Restarts the server"
-  echo -e "   foreground \t\t\t\t Runs the server in the foreground"
   echo -e "   status \t\t\t\t Displays server status"
   echo -e "   players-online \t\t\t Shows online players"
   echo -e "   players \t\t\t\t Shows all players"
@@ -176,75 +175,25 @@ start_service() {
     rm ${PIDFILE} 2> /dev/null
   fi
 
-  echo -n "Starting factorio: "
+  if ! check_permissions; then
+    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
+    return 1
+  fi
 
-  # Run foreground script
-  as_user "$0 foreground > /dev/null 2>&1 &";
+  if [ "${SAVELOG}" ==  "0" ]; then
+    debug "Erasing log ${CMDOUT}"
+    echo "" > ${CMDOUT}
+  fi
 
-  # Try to read and look for the service 30 times
-  # Because there is a 1sec sleep, this waits for 30 seconds
-  for i in $(seq 30); do
-    if [ -f "${PIDFILE}" ] && ps -p $(cat ${PIDFILE}) > /dev/null 2>&1; then
-      echo; # Insert newline
-      echo "Started ${SERVICE_NAME}, please see log for details"
-      return 0;
-    fi
+  as_user "tail -f ${FIFO} |${INVOCATION} >> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
-    sleep 1;
-    echo -n "."
-  done
-
-  echo; # Insert newline
-  echo "${SERVICE_NAME} didn't start in 30 seconds"
-  return 1;
-}
-
-foreground_service() {
-    if [ "${ME}" != "${USERNAME}" ]; then
-        # Foreground should be ran as service user
-        debug "Restarting 'factorio foreground' as ${USERNAME}";
-        # We want no lingering factorio.sh instances,
-        # So replace this script with sudo and correct user
-        exec sudo -u "${USERNAME}" "${0}" "foreground";
-    fi
-
-    # `check_permissions` creates the fifo, so call it here
-    if ! check_permissions; then
-      echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
-      return 1
-    fi
-
-    if [ "${SAVELOG}" ==  "0" ]; then
-      debug "Erasing log ${CMDOUT}"
-      echo "" > ${CMDOUT}
-    fi
-
-    # This keeps the fifo open for 10 years
-    # So we don't have to add an dangling tail kill
-    # Tail e.g. won't quit when `${INVOCATION}` quits
-    sleep 3560d > ${FIFO} &
-
-    # Store sleep PID in variable, so we kill it later
-    local fifo_open=$!;
-
-    # Pipe FIFO into factorio, and append output to CMDOUT
-    # Background this process so we can catch the PID
-    ${INVOCATION} < ${FIFO} 2>&1 >> ${CMDOUT} &
-
-    # Write PID to the PIDFILE
-    echo $! > ${PIDFILE};
-
-    # Go back to the foreground and wait for it to exit
-    fg;
-
-    # Save factorio exit code
-    local exit_code=$?;
-
-    # Kill the 10 years sleep
-    kill $fifo_open;
-
-    # Exit with the same exit code factorio did
-    exit $exit_code;
+  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
+  if [ "$?" -ne "0" ]; then
+    echo "Unable to start ${SERVICE_NAME}"
+    return 1
+  else
+    echo "Started ${SERVICE_NAME}, please see log for details"
+  fi
 }
 
 stop_service() {
@@ -401,7 +350,7 @@ install(){
 
   if [ $downloadlatest ]; then
     LATEST_HEADLESS_URL_REDIRECT_FILENAME=$(curl ${LATEST_HEADLESS_URL} -s -L -I -o /dev/null -w '%{url_effective}')
-    if [[ $LATEST_HEADLESS_URL_REDIRECT_FILENAME == *"tar.xz"* ]]; then
+    if [[ $LATEST_HEADLESS_URL_REDIRECT_FILENAME == *"tar.xz"* ]]; then 
       TAR_OPTIONS="-xJv"
     else
       TAR_OPTIONS="-xzv"
@@ -412,7 +361,7 @@ install(){
     fi
   else
     echo "Installing ${tarball} ..."
-    if [[ $tarball == *"tar.xz"* ]]; then
+    if [[ $tarball == *"tar.xz"* ]]; then 
       TAR_OPTIONS="-xJvf"
     else
       TAR_OPTIONS="-xzvf"
@@ -489,7 +438,9 @@ update(){
   echo "Checking for updates..."
   result=`as_user "${invocation} --dry-run"`
   exitcode=$?
-  if [ ${exitcode} -gt 0 ]; then
+  if [ ${exitcode} -eq 1 -o ${exitcode} -gt 2 ]; then
+    debug "Invocation: ${invocation}"
+    debug "${result}"
     echo "Update check failed!"
     exit 1
   else
@@ -589,17 +540,7 @@ case "$1" in
       exit 0
     fi
     ;;
-  foreground)
-    # Runs server in foreground
-    if is_running; then
-      echo "Server already running."
-      exit 1
-    fi
 
-    foreground_service;
-    exit 0;
-
-    ;;
   restart)
     # Restarts the server
     if is_running; then
