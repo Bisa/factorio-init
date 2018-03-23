@@ -48,14 +48,21 @@ fi
 if [ -z ${BINARY} ]; then
   # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
   BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+  BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
 fi
 
+if [ ${ALT_GLIBC} -gt 0 ]; then
+  # If ALT_GLIBC is non 0 then activate alternative glibc root here
+  BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${FACTORIO_PATH}/bin/x64/factorio"
+  BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
+  EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
+fi
 case "$1" in
   install|help|listcommands|version|"")
     ;;
   *)
-    if ! [ -e ${BINARY} ]; then
-      echo "Could not find factorio binary! ${BINARY}"
+    if ! [ -e ${BINARYB} ]; then
+      echo "Could not find factorio binary! ${BINARYB}"
       echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
       exit 1
     fi
@@ -75,8 +82,8 @@ case "$1" in
       echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
       echo "(also make sure you have a save to run or the server will not start)"
       echo
-      echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame"
-      echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest"
+      echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame ${EXE_ARGS_GLIBC}"
+      echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest ${EXE_ARGS_GLIBC}"
       echo
       echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
       exit 1
@@ -87,7 +94,7 @@ case "$1" in
       # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
       # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
       debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
-      WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARY")/..'#g')")
+      WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARYB")/..'#g')")
     fi
     debug "write path: $WRITE_DIR"
   
@@ -106,7 +113,7 @@ case "$1" in
     fi
   
     # Finally, set up the invocation
-    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${RCON} ${EXTRA_BINARGS}"
+    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS}"
     ;;
 esac
   
@@ -185,7 +192,7 @@ start_service() {
     echo "" > ${CMDOUT}
   fi
 
-  as_user "tail -f ${FIFO} |${INVOCATION} >> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
+  as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -282,8 +289,8 @@ cmd_players(){
 }
 
 check_permissions(){
-  if [ ! -e "${BINARY}" ]; then
-    echo "Can't find ${BINARY}. Please check your config!"
+  if [ ! -e "${BINARYB}" ]; then
+    echo "Can't find ${BINARYB}. Please check your config!"
     exit 1
   fi
 
@@ -379,7 +386,7 @@ install(){
   fi
 
   # Generate default config.ini by creating a save
-  as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save"
+  as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save ${EXE_ARGS_GLIBC}"
   if [ $? -eq 0 ]; then
     echo "Installation complete, edit data/server-settings.json and start your server"
     exit 0
@@ -492,14 +499,14 @@ update(){
 
   for patch in $(find ${tmpdir} -type f -name "*.zip" | sort -V); do
     echo "Applying ${patch} ..."
-    result=`as_user "$BINARY --apply-update ${patch}"`
+    result=`as_user "$BINARY --apply-update ${patch} ${EXE_ARGS_GLIBC}"`
     exitcode=$?
     if [ $exitcode -gt 0 ]; then
       echo "${result}"
       echo
       echo "Error! Failed to apply update"
       echo "You can try to apply it manually with:"
-      echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch}\""
+      echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
       exit 1
     fi
   done
@@ -622,7 +629,7 @@ case "$1" in
     # Check if user wants to use custom map gen settings
     if [ $3 ]; then
       if [ -e "${WRITE_DIR}/$3" ]; then
-        createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/$3"
+        createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/$3 ${EXE_ARGS_GLIBC}"
       else
         echo "Specified map gen settings json does not exist"
         exit 1
@@ -632,7 +639,7 @@ case "$1" in
     # Check if user wants to use custom map settings
     if [ $4 ]; then
       if [ -e "${WRITE_DIR}/$4" ]; then
-        createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/$4"
+        createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/$4 ${EXE_ARGS_GLIBC}"
       else
         echo "Specified map settings json does not exist"
         exit 1
