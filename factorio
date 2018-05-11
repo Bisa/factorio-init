@@ -50,6 +50,9 @@ if [ -z ${BINARY} ]; then
   BINARY="${FACTORIO_PATH}/bin/x64/factorio"
   BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
 fi
+if [ -z ${ALT_GLIBC} ]; then
+  ALT_GLIBC=0
+fi
 
 if [ ${ALT_GLIBC} -gt 0 ]; then
   # If ALT_GLIBC is non 0 then activate alternative glibc root here
