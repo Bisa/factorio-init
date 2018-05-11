@@ -716,6 +716,10 @@ case "$1" in
   version)
     echo `get_bin_version`
     ;;
+  source)
+    # do not call `exit` and just return successfully, so that other scripts (possibly with set -e) may source this script to import all out variables and functions
+    return 0
+    ;;
   *)
     echo "No such command!"
     echo
