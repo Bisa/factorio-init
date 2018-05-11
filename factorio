@@ -243,20 +243,20 @@ stop_service() {
 send_cmd(){
   if is_running; then
     if [ -p ${FIFO} ]; then
-      cmdid="FACTORIO_INIT_CMD_DELIMITER"
-      # Whisper that unknown player
-      echo "/w ${cmdid}" > ${FIFO}
-      # Wait for factorio to read stdin
-      sleep 1
+      # Generate two unique log markers
+      TIMESTAMP=$(date +"%s")
+      START="FACTORIO_INIT_CMD_${TIMESTAMP}_START"
+      END="FACTORIO_INIT_CMD_${TIMESTAMP}_END"
+
+      # Whisper that unknown player to place start marker in log
+      echo "/w $START" > ${FIFO}
       # Run the actual command
       echo $@ > ${FIFO}
-      # Wait again, this might need more sleep for larger command output - time will tell (sorry future self for any head aches)
-      sleep 1
-      # Read the output file backwards - capture everything between the end of file until
-      # factorio tells us our random command id player does not exist.
-      # This also attempts to filter all non chat/command lines from the output
-      response=$(sed "/Player ${cmdid} doesn't exist./q" <(tac ${CMDOUT}) |egrep -v "(${cmdid})|${NONCMDPATTERN}")
-      echo "${response}"
+      # Whisper that unknown player again to place end marker in log after the command terminated
+      echo "/w $END" > ${FIFO}
+
+      # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
+      awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" <(stdbuf -i0 -o0 tail -F ${CMDOUT} 2> /dev/null)
     else
       echo "${FIFO} is not a pipe!"
       return 1
