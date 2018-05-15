@@ -1,6 +1,10 @@
 # Factorio Init Script
 A factorio init script for linux
 
+# Dependencies
+ Among others:
+ - cURL
+
 # Debugging
  If you find yourself wondering why stuff is not working the way you expect:
  - Check the logs, I suggest you `tail -f /opt/factorio/factorio-current.log` in a separate session

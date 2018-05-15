@@ -4,6 +4,13 @@
 # this script is not behaving the way you expect it to do
 DEBUG=0
 
+# Enable alternative glibc directory for systems using older glibc versions ( ie RHEL CentOS and others )
+ALT_GLIBC=0
+# Put the Absolute path to the side by side glibc root here
+ALT_GLIBC_DIR="/opt/glibc-2.18"
+#Version of alt glibc goes here (i.e 2.18)
+ALT_GLIBC_VER="2.18"
+
 # What do you want to call this service?
 SERVICE_NAME="Factorio"
 
