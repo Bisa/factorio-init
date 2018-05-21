@@ -40,7 +40,11 @@ if [ -z "${HEADLESS}" ]; then
   HEADLESS=1
 fi
 if [ -z "${LATEST_HEADLESS_URL}" ]; then
-  LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
+  if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
+    LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
+  else
+    LATEST_HEADLESS_URL="https://www.factorio.com/get-download/stable/headless/linux64"
+  fi
 fi
 if [ -z "${NONCMDPATTERN}" ]; then
   NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'

@@ -28,6 +28,11 @@ A factorio init script for linux
  ```
 - Rename config.example to config and modify the values within according to your setup.
 
+## Notes for users with an OS that has a older glibc version:
+
+- The config has options for declaring a alternate glibc root. The user millisa over on the factorio forums has created a wonderful guide to follow on creating this alternate glibc root ( side by side ) here:
+https://forums.factorio.com/viewtopic.php?t=54654#p324493
+
 ## First-run
 - If you don't have Factorio installed already, use the `install` command:
 
