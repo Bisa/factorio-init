@@ -178,6 +178,11 @@ is_running() {
   return 1
 }
 
+wait_pingpong() {
+  until ping -c1 pingpong1.factorio.com &>/dev/null; do :; done
+  until ping -c1 pingpong2.factorio.com &>/dev/null; do :; done
+}
+
 start_service() {
   if [ -e ${PIDFILE} ]; then
     ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
@@ -198,6 +203,8 @@ start_service() {
     debug "Erasing log ${CMDOUT}"
     echo "" > ${CMDOUT}
   fi
+
+  wait_pingpong
 
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
