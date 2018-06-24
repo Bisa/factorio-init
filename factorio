@@ -437,7 +437,14 @@ update(){
     UPDATE_TMPDIR=/tmp
   fi
 
-  tmpdir="${UPDATE_TMPDIR}/factorio-update"
+  # Create tmpdir and ensure automatic cleanup
+  tmpdir=`as_user "mktemp -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
+  if [ $? -ne 0 ]; then
+    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+    exit 1
+  fi
+  trap "rm -rf ${tmpdir}" EXIT
+    
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
@@ -478,21 +485,9 @@ update(){
     exit 0
   fi
 
-  if [ -e ${tmpdir} ]; then
-    echo "Aborting update! Temporary directory already exists ${tmpdir}"
-    echo "Remnants from a previously failed update?"
-    exit 1
-  fi
-
-  if ! as_user "mkdir -p ${tmpdir}"; then
-    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-    exit 1
-  fi
-
   # Time to download the updates
   if ! as_user "${invocation}"; then
     echo "Aborting update!"
-    rm -rf ${tmpdir}
     exit 1
   fi
 
@@ -524,7 +519,6 @@ update(){
   fi
 
   echo "Successfully updated factorio"
-  rm -rf ${tmpdir}
 }
 
 case "$1" in
