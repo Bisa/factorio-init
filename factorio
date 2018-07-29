@@ -57,6 +57,9 @@ fi
 if [ -z ${ALT_GLIBC} ]; then
   ALT_GLIBC=0
 fi
+if [ -z ${WAIT_PINGPONG} ]; then
+  WAIT_PINGPONG=0
+fi
 
 if [ ${ALT_GLIBC} -gt 0 ]; then
   # If ALT_GLIBC is non 0 then activate alternative glibc root here
@@ -204,7 +207,9 @@ start_service() {
     echo "" > ${CMDOUT}
   fi
 
-  wait_pingpong
+  if [ ${WAIT_PINGPONG} -gt 0 ]; then
+    wait_pingpong
+  fi
 
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
