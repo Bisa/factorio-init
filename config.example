@@ -32,6 +32,11 @@ PORT=34197
 # If you set this to 1 you might want to apply logrotate on the log or it will eventually fill your disk
 SAVELOG=0
 
+# Delay starting the game server until the we confirm the pingpong servers are reachable.
+# This makes sure that game server detects the correct external IP in a NAT setup.
+# Useful for Cloud providers where VMs may start faster than their Internet connectivity is plumbed.
+WAIT_PINGPONG=0
+
 # Factorio comes packaged in a tarball containing the directory named "factorio"
 # when using this scripts update/install command we expect to see this very
 # directory. If you want to supply your own update/install tar other than what you can download
