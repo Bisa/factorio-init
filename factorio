@@ -458,7 +458,7 @@ update(){
   fi
 
   # Create tmpdir and ensure automatic cleanup
-  tmpdir=`as_user "mktemp -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
+  tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
   if [ $? -ne 0 ]; then
     echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
     exit 1
