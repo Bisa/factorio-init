@@ -255,6 +255,11 @@ stop_service() {
 }
 
 send_cmd(){
+  NEED_OUTPUT=0
+  if [ "xx$1" == "xx-o" ]; then
+    NEED_OUTPUT=1
+    shift
+  fi
   if is_running; then
     if [ -p ${FIFO} ]; then
       # Generate two unique log markers
@@ -269,8 +274,11 @@ send_cmd(){
       # Whisper that unknown player again to place end marker in log after the command terminated
       echo "/w $END" > ${FIFO}
 
-      # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
-      awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" <(stdbuf -i0 -o0 tail -F ${CMDOUT} 2> /dev/null)
+      if [ ${NEED_OUTPUT} -eq 1 ]; then
+        # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
+        sleep 1
+        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < ${CMDOUT}
+      fi
     else
       echo "${FIFO} is not a pipe!"
       return 1
@@ -282,7 +290,7 @@ send_cmd(){
 }
 
 cmd_players(){
-  players=$(send_cmd "/p")
+  players=$(send_cmd -o "/p")
   if [ -z "${players}" ]; then
     echo "No players found!"
     return 1
