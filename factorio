@@ -120,7 +120,7 @@ case "$1" in
     fi
   
     # Finally, set up the invocation
-    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS}"
+    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS}"
     ;;
 esac
   
@@ -199,50 +199,7 @@ start_service() {
     echo "" > ${CMDOUT}
   fi
 
-  as_user "tail -f ${FIFO} |${INVOCATION} --start-server-load-latest ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
-
-  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-  if [ "$?" -ne "0" ]; then
-    echo "Unable to start ${SERVICE_NAME}"
-    return 1
-  else
-    echo "Started ${SERVICE_NAME}, please see log for details"
-  fi
-}
-
-
-start_service_scenario() {
-  if [ -z "$1" ]; then
-    echo -e "No scenario name passed to start_service_scenario()"
-    return 1
-  fi
-  scenario="$1"
-  if [ -z "$2" ]; then
-    echo -e "No map gen passed to start_service_scenario()"
-    return 1
-  fi
-  mapgen="$2"
-  if [ -e ${PIDFILE} ]; then
-    ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
-      echo "${SERVICE_NAME} is already running!"
-      return 1
-    fi
-    debug "Found rogue pid file, server might have crashed"
-    rm ${PIDFILE} 2> /dev/null
-  fi
-
-  if ! check_permissions; then
-    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
-    return 1
-  fi
-
-  if [ "${SAVELOG}" ==  "0" ]; then
-    debug "Erasing log ${CMDOUT}"
-    echo "" > ${CMDOUT}
-  fi
-
-  as_user "tail -f ${FIFO} |${INVOCATION} --start-server-load-scenario ${scenario} ${mapgen} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
+  as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
   if [ "$?" -ne "0" ]; then
@@ -578,46 +535,6 @@ case "$1" in
       exit 0
     else
        if ! start_service; then
-         echo "Could not start $SERVICE_NAME"
-         exit 1
-       fi
-    fi
-    ;;
-	
-  start-scenario)
-    if [ -z $2 ]; then
-      echo -e "You must specify a scenario name example: scenario-name or base/freeplay or latest for the latest scenario added"
-      exit 1
-    fi
-    scenarioname="$2"
-    if [ "${scenarioname}" == "latest" ]; then
-      scenarioname="$(ls -t ${WRITE_DIR}/scenarios/ | head -1)"
-      echo -e "Using latest scenario: ${scenarioname}"
-    fi
-    # Check if user wants to use custom map gen settings
-    if [ $3 ]; then
-      if [ -e "${WRITE_DIR}/$3" ]; then
-        if [ $4 ]; then
-          if [ -e "${WRITE_DIR}/$4" ]; then
-          mapgen="--map-gen-settings=${WRITE_DIR}/$3 --map-settings=${WRITE_DIR}/$4"
-          else
-          echo -e "Specified map settings json does not exist"
-          exit 1
-          fi
-        fi
-      else
-        echo -e "Specified map gen settings json does not exist"
-        exit 1
-      fi
-    else
-	  mapgen="--preset rail-world"
-    fi
-    # Starts the server
-    if is_running; then
-      echo "Server already running."
-      exit 0
-    else
-       if ! start_service_scenario; then
          echo "Could not start $SERVICE_NAME"
          exit 1
        fi
