@@ -57,6 +57,9 @@ fi
 if [ -z ${ALT_GLIBC} ]; then
   ALT_GLIBC=0
 fi
+if [ -z ${WAIT_PINGPONG} ]; then
+  WAIT_PINGPONG=0
+fi
 
 if [ ${ALT_GLIBC} -gt 0 ]; then
   # If ALT_GLIBC is non 0 then activate alternative glibc root here
@@ -178,6 +181,11 @@ is_running() {
   return 1
 }
 
+wait_pingpong() {
+  until ping -c1 pingpong1.factorio.com &>/dev/null; do :; done
+  until ping -c1 pingpong2.factorio.com &>/dev/null; do :; done
+}
+
 start_service() {
   if [ -e ${PIDFILE} ]; then
     ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
@@ -197,6 +205,10 @@ start_service() {
   if [ "${SAVELOG}" ==  "0" ]; then
     debug "Erasing log ${CMDOUT}"
     echo "" > ${CMDOUT}
+  fi
+
+  if [ ${WAIT_PINGPONG} -gt 0 ]; then
+    wait_pingpong
   fi
 
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
@@ -255,6 +267,11 @@ stop_service() {
 }
 
 send_cmd(){
+  NEED_OUTPUT=0
+  if [ "xx$1" == "xx-o" ]; then
+    NEED_OUTPUT=1
+    shift
+  fi
   if is_running; then
     if [ -p ${FIFO} ]; then
       # Generate two unique log markers
@@ -269,8 +286,11 @@ send_cmd(){
       # Whisper that unknown player again to place end marker in log after the command terminated
       echo "/w $END" > ${FIFO}
 
-      # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
-      awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" <(stdbuf -i0 -o0 tail -F ${CMDOUT} 2> /dev/null)
+      if [ ${NEED_OUTPUT} -eq 1 ]; then
+        # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
+        sleep 1
+        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < ${CMDOUT}
+      fi
     else
       echo "${FIFO} is not a pipe!"
       return 1
@@ -282,7 +302,7 @@ send_cmd(){
 }
 
 cmd_players(){
-  players=$(send_cmd "/p")
+  players=$(send_cmd -o "/p")
   if [ -z "${players}" ]; then
     echo "No players found!"
     return 1
@@ -437,7 +457,14 @@ update(){
     UPDATE_TMPDIR=/tmp
   fi
 
-  tmpdir="${UPDATE_TMPDIR}/factorio-update"
+  # Create tmpdir and ensure automatic cleanup
+  tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
+  if [ $? -ne 0 ]; then
+    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+    exit 1
+  fi
+  trap "rm -rf ${tmpdir}" EXIT
+    
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
@@ -478,21 +505,9 @@ update(){
     exit 0
   fi
 
-  if [ -e ${tmpdir} ]; then
-    echo "Aborting update! Temporary directory already exists ${tmpdir}"
-    echo "Remnants from a previously failed update?"
-    exit 1
-  fi
-
-  if ! as_user "mkdir -p ${tmpdir}"; then
-    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-    exit 1
-  fi
-
   # Time to download the updates
   if ! as_user "${invocation}"; then
     echo "Aborting update!"
-    rm -rf ${tmpdir}
     exit 1
   fi
 
@@ -524,7 +539,6 @@ update(){
   fi
 
   echo "Successfully updated factorio"
-  rm -rf ${tmpdir}
 }
 
 case "$1" in
