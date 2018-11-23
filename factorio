@@ -129,7 +129,6 @@ usage(){
   echo
   echo "Available commands:"
   echo -e "   start \t\t\t\t Starts the server"
-  echo -e "   start-scenario [scenario or latest] [mapgen] \t\t\t\t Starts the server with a scenario"
   echo -e "   stop \t\t\t\t Stops the server"
   echo -e "   restart \t\t\t\t Restarts the server"
   echo -e "   status \t\t\t\t Displays server status"
