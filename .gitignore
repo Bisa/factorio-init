@@ -1,6 +1,3 @@
-.gitignore
-.project
-.gitattributes
 config
 factorio.service
 factorio-env.service
