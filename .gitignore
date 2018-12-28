@@ -1,4 +1,3 @@
-config
-factorio.service
-factorio-env.service
-systemd.env
+.gitignore
+.project
+.gitattributes
