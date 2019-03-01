@@ -210,6 +210,7 @@ start_service() {
   if ! [ -e ${ADMINLIST} ]; then
     debug "${ADMINLIST} does not exist!  Creating empty file."
     echo "[]" > ${ADMINLIST}
+    chown ${USERNAME}:${USERGROUP} ${ADMINLIST}
   fi
 
   if [ ${WAIT_PINGPONG} -gt 0 ]; then
