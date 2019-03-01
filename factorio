@@ -123,7 +123,7 @@ case "$1" in
     fi
   
     # Finally, set up the invocation
-    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS}"
+    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS} --server-adminlist ${ADMINLIST}"
     ;;
 esac
   
@@ -205,6 +205,11 @@ start_service() {
   if [ "${SAVELOG}" ==  "0" ]; then
     debug "Erasing log ${CMDOUT}"
     echo "" > ${CMDOUT}
+  fi
+
+  if ! [ -e ${ADMINLIST} ]; then
+    debug "${ADMINLIST} does not exist!  Creating empty file."
+    echo "[]" > ${ADMINLIST}
   fi
 
   if [ ${WAIT_PINGPONG} -gt 0 ]; then

@@ -24,6 +24,15 @@ FACTORIO_PATH=/opt/factorio
 # Server settings file, see data/server-settings.example.json
 SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 
+# Server admin settings
+# Server admin list file, must be in the following format:
+# [
+#    admin1,
+#    admin2,
+#    adminX
+# ]
+ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
+
 # Port on which you want to run the server
 PORT=34197
 
