@@ -31,6 +31,7 @@ SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 #    admin2,
 #    adminX
 # ]
+# If the file does not exist in ${FACTORIO_PATH}/data, a blank copy will be created.
 ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
 
 # Port on which you want to run the server
