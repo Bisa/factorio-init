@@ -490,7 +490,7 @@ update(){
 
   if [ -z "${newversion}" ]; then
     echo "No new updates for ${package} ${version}"
-    exit 0
+    exit 1
   else
     echo "New version ${package} ${newversion}"
   fi
