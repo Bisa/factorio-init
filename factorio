@@ -658,7 +658,7 @@ case "$1" in
       if [ -e "${WRITE_DIR}/$3" ]; then
         createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/data/$3"
       else
-        echo "Specified map-gen-settings json does not exist in server's /data directory"
+        echo "Specified map-gen-settings json file does not exist in server's /data directory"
         exit 1
       fi
     fi
@@ -668,7 +668,7 @@ case "$1" in
       if [ -e "${WRITE_DIR}/$4" ]; then
         createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/data/$4"
       else
-        echo "Specified map settings json does not exist in server's /data directory"
+        echo "Specified map-settings json file does not exist in server's /data directory"
         exit 1
       fi
     fi
