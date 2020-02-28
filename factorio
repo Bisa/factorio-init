@@ -60,13 +60,16 @@ fi
 if [ -z ${WAIT_PINGPONG} ]; then
   WAIT_PINGPONG=0
 fi
-
+if [ -z ${ADMINLIST} ]; then
+  ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
+fi
 if [ ${ALT_GLIBC} -gt 0 ]; then
   # If ALT_GLIBC is non 0 then activate alternative glibc root here
   BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${FACTORIO_PATH}/bin/x64/factorio"
   BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
   EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
 fi
+
 case "$1" in
   install|help|listcommands|version|"")
     ;;
