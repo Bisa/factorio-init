@@ -45,12 +45,18 @@ https://forums.factorio.com/viewtopic.php?t=54654#p324493
 - If you previously ran Factorio without this script, the existing `config.ini` should work fine.
 
 ## Autocompletion
-- Copy/Symlink or source the bash_autocompletion file
+- Copy/symlink or source the bash_autocompletion file
+- Ensure the factorio script is in your path
 
  ```bash
+ # either symlink:
  $ ln -s /opt/factorio-init/bash_autocomplete /etc/bash_completion.d/factorio
- # OR:
+ # or source:
  $ echo "source /opt/factorio-init/bash_autocomplete" >> ~/.bashrc
+ 
+ # then ensure factorio-init is added to your PATH, ie by:
+ $ ln -s /opt/factorio-init/factorio /usr/local/bin/factorio
+ 
  # restart your shell to verify that it worked
  ```
 
