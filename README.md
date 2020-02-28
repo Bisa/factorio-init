@@ -77,6 +77,7 @@ https://forums.factorio.com/viewtopic.php?t=54654#p324493
  # Remember to enable the service at startup if you want that:
  $ systemctl enable factorio
  ```
+Note that systemd won't be able to keep track of the server process if you use this script to restart during updates. Use the config option ```UPDATE_PREVENT_RESTART=1``` and implement your own stop/start logic to work around this.
 
 ## SysvInit
 - Symlink the init script:

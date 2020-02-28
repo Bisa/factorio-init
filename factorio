@@ -46,6 +46,9 @@ if [ -z "${LATEST_HEADLESS_URL}" ]; then
     LATEST_HEADLESS_URL="https://www.factorio.com/get-download/stable/headless/linux64"
   fi
 fi
+if [ -z "${UPDATE_PREVENT_RESTART}" ]; then
+  UPDATE_PREVENT_RESTART=0
+fi
 if [ -z "${NONCMDPATTERN}" ]; then
   NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
 fi
@@ -478,6 +481,9 @@ update(){
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
   fi
+  if [ ${DEBUG} -gt 0 ]; then
+    invocation="${invocation} --verbose"
+  fi
 
   if [ ${HEADLESS} -eq 0 ]; then
     #GoodGuy Wube Software allows you to download the headless for free - yay! but you still have to
@@ -494,7 +500,7 @@ update(){
     echo "Update check failed!"
     exit 1
   else
-    newversion=`echo ${result} |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
+    newversion=`echo "${result}" |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
   fi
 
   if [ -z "${newversion}" ]; then
@@ -512,6 +518,19 @@ update(){
       exit 2
     fi
     exit 0
+  fi
+
+  # Prevent update restart, ie require the server to be stopped before we apply updates
+  if [ $UPDATE_PREVENT_RESTART -gt 0 ]; then
+    debug "Preventing update restarts ..."
+    if is_running; then
+      echo "Factorio is running, aborting update - stop the server and re-run the update command!"
+      exit 3
+    else
+      debug "Server wasn't running, continue with the update."
+    fi
+  else
+    debug "Will not prevent update restarts."
   fi
 
   # Time to download the updates
