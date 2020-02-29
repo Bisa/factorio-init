@@ -800,7 +800,7 @@ run_main(){
       echo `$0 help 2> /dev/null |egrep '^   ' |awk '{ print $1 }'`
       ;;
     listsaves)
-      find ${WRITE_DIR} -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
+      find ${WRITE_DIR}/saves -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
       ;;
     version)
       echo `get_bin_version`
