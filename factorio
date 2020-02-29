@@ -26,7 +26,7 @@ load_config(){
 
   if [ -z "${SERVICE_NAME}" ]; then
     echo "Couldn't load config file, please edit config.example and rename it to config"
-    exit 1
+    return 1
   fi
 
   # Check/load defaults for backwards compatible config options
@@ -76,9 +76,8 @@ load_config(){
     BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
     EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
   fi
-}
-
-sanity_checks(){ 
+  
+  # perform some sanity checks in order to properly load the configuration
   case "$1" in
     install|help|listcommands|version|"")
       ;;
@@ -86,7 +85,7 @@ sanity_checks(){
       if ! [ -e ${BINARYB} ]; then
         echo "Could not find factorio binary! ${BINARYB}"
         echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
-        exit 1
+        return 1
       fi
     
       if [ -z ${FCONF} ]; then
@@ -96,7 +95,7 @@ sanity_checks(){
       if ! [ -e "${SERVER_SETTINGS}" ]; then
         echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
         echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
-        exit 1
+        return 1
       fi
     
       if ! [ -e ${FCONF} ]; then
@@ -108,7 +107,7 @@ sanity_checks(){
         echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest ${EXE_ARGS_GLIBC}"
         echo
         echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
-        exit 1
+        return 1
       fi
       if [ -z "${WRITE_DIR}" ]; then
         # figure out the write-data path (where factorio looks for saves and mods)
@@ -599,9 +598,8 @@ update(){
 }
 
 run_main(){
-  load_config
-  sanity_checks $@
-
+  load_config $@ || exit $?
+    
   case "$1" in
     start)
       # Starts the server
