@@ -49,6 +49,9 @@ fi
 if [ -z "${UPDATE_PREVENT_RESTART}" ]; then
   UPDATE_PREVENT_RESTART=0
 fi
+if [ -z "${UPDATE_PERSIST_TMPDIR}" ]; then
+  UPDATE_PERSIST_TMPDIR=0
+fi
 if [ -z "${NONCMDPATTERN}" ]; then
   NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
 fi
@@ -469,13 +472,30 @@ update(){
     UPDATE_TMPDIR=/tmp
   fi
 
-  # Create tmpdir and ensure automatic cleanup
-  tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
-  if [ $? -ne 0 ]; then
-    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-    exit 1
+  if [ $UPDATE_PERSIST_TMPDIR -gt 0 ]; then
+    # check/create tmpdir to ensure updater can download patches here
+    tmpdir="${UPDATE_TMPDIR}/factorio-update"
+    debug "Checking/creating update directory (persistant): ${tmpdir}"
+    if ! [ -e "${tmpdir}" ]; then
+      if ! as_user "mkdir -p ${tmpdir}"; then
+        echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+        exit 1
+      fi
+    fi
+    if ! as_user "test -w ${tmpdir}" ]; then
+      echo "Aborting update! Unable to write to tmpdir: ${tmpdir}"
+      exit 1
+    fi
+  else
+    # Create tmpdir and ensure automatic cleanup
+    debug "Creating update tmpdir: ${tmpdir}"
+    tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
+    if [ $? -ne 0 ]; then
+      echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+      exit 1
+    fi
+    trap "rm -rf ${tmpdir}" EXIT
   fi
-  trap "rm -rf ${tmpdir}" EXIT
     
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
@@ -555,8 +575,10 @@ update(){
       echo "${result}"
       echo
       echo "Error! Failed to apply update"
-      echo "You can try to apply it manually with:"
-      echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
+      if [ $UPDATE_PERSIST_TMPDIR -gt 0 ]; then
+        echo "You can try to apply it manually with:"
+        echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
+      fi
       exit 1
     fi
   done

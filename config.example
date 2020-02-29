@@ -72,7 +72,13 @@ HEADLESS=1
 UPDATE_USERNAME=you
 UPDATE_TOKEN=yourtoken
 UPDATE_EXPERIMENTAL=0
+# set this to a directory where you allow this script to create a 'factorio-update' directory.
 UPDATE_TMPDIR=/tmp
+# The directory ${UPDATE_TMPDIR}/factorio-update will be used by the updater to store patches for factorio.
+#   If you set UPDATE_PERSIST_TMPDIR=1 this script will not try to clean up the directory.
+#   This will effectively cache the patch files for later use but be aware that you need to handle eventual clean-up
+#   of the ${UPDATE_TMPDIR}/factorio-update directory yourself.
+UPDATE_PERSIST_TMPDIR=0
 # prevent the script from restarting factorio during updates by setting this to 1
 #   (note! This also means that you will be prevented from applying updates with the
 #   script if the server is running)
