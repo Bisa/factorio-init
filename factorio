@@ -198,14 +198,9 @@ wait_pingpong() {
 }
 
 start_service() {
-  if [ -e ${PIDFILE} ]; then
-    ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
+  if is_running; then
       echo "${SERVICE_NAME} is already running!"
       return 1
-    fi
-    debug "Found rogue pid file, server might have crashed"
-    rm ${PIDFILE} 2> /dev/null
   fi
 
   if ! check_permissions; then
@@ -226,7 +221,7 @@ start_service() {
     fi
   fi
 
-  if [ "${SAVELOG}" ==  "0" ]; then
+  if [ ${SAVELOG} -eq 0 ]; then
     debug "Erasing log ${CMDOUT}"
     echo "" > ${CMDOUT}
   fi
@@ -244,8 +239,9 @@ start_service() {
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
   ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-  if [ "$?" -ne "0" ]; then
-    echo "Unable to start ${SERVICE_NAME}"
+  if [ $? -gt 0 ]; then
+    as_user "cat ${CMDOUT} |grep -v -P '^$'"
+    echo -e "\nUnable to start ${SERVICE_NAME}"
     return 1
   else
     echo "Started ${SERVICE_NAME}, please see log for details"
@@ -608,16 +604,8 @@ run_main(){
     
   case "$1" in
     start)
-      # Starts the server
-      if is_running; then
-        echo "Server already running."
-        exit 0
-      else
-        if ! start_service; then
-          echo "Could not start $SERVICE_NAME"
-          exit 1
-        fi
-      fi
+      start_service
+      exit $?
       ;;
 
     stop)
