@@ -209,8 +209,21 @@ start_service() {
   fi
 
   if ! check_permissions; then
-    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
+    return $?
+  fi
+
+  # ensure we have a binary to start
+  if ! [ -e "${BINARYB}" ]; then
+    echo "Can't find ${BINARYB}. Please check your config!"
     return 1
+  fi
+
+  # ensure we have a fifo
+  if ! [ -p ${FIFO} ]; then
+    if ! as_user "mkfifo ${FIFO}"; then
+      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
+      return 1
+    fi
   fi
 
   if [ "${SAVELOG}" ==  "0" ]; then
@@ -333,31 +346,19 @@ cmd_players(){
 }
 
 check_permissions(){
-  if [ ! -e "${BINARYB}" ]; then
-    echo "Can't find ${BINARYB}. Please check your config!"
-    exit 1
-  fi
-
   if ! as_user "test -w ${WRITE_DIR}" ; then
     echo "Check Permissions. Cannot write to ${WRITE_DIR}"
-    exit 1
+    return 1
   fi
 
   if ! as_user "touch ${PIDFILE}" ; then
     echo "Check Permissions. Cannot touch pidfile ${PIDFILE}"
-    exit 1
-  fi
-
-  if ! [ -p ${FIFO} ]; then
-    if ! as_user "mkfifo ${FIFO}"; then
-      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
-      exit 1
-    fi
+    return 1
   fi
 
   if ! as_user "touch ${CMDOUT}" ; then
     echo "Check Permissions. Cannot touch cmd output file ${CMDOUT}"
-    exit 1
+    return 1
   fi
 }
 
