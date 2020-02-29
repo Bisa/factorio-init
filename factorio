@@ -700,9 +700,9 @@ run_main(){
       savename="${WRITE_DIR}/saves/$2"
       createsavecmd="$BINARY --create \"${savename}\""
 
-      # Check if user wants to use custom map gen settings
+      # Check if user wants to use custom map-gen-settings
       if [ $3 ]; then
-        if [ -e "${WRITE_DIR}/$3" ]; then
+        if [ -e "${WRITE_DIR}/data/$3" ]; then
           createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/data/$3"
         else
           echo "Specified map-gen-settings json file does not exist in server's /data directory"
@@ -710,25 +710,16 @@ run_main(){
         fi
       fi
 
-      # Check if user wants to use custom map settings
+      # Check if user wants to use custom map-settings
       if [ $4 ]; then
-        if [ -e "${WRITE_DIR}/$4" ]; then
+        if [ -e "${WRITE_DIR}/data/$4" ]; then
           createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/data/$4"
         else
           echo "Specified map-settings json file does not exist in server's /data directory"
           exit 1
         fi
       fi
-
-      # Stop Service
-      if is_running; then
-        send_cmd "Generating new save, please stand by"
-        if ! stop_service; then
-          echo "Failed to stop server, unable to create new save"
-          exit 1
-        fi
-      fi
-
+      
       if ! as_user "$createsavecmd ${EXE_ARGS_GLIBC}"; then
         echo "Failed to create new game"
         exit 1
