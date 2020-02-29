@@ -457,7 +457,7 @@ update(){
   if ! [ -e "${UPDATE_SCRIPT}" ]; then
     echo "Failed to find update script, blatantly refusing to continue!"
     echo "Try cloning into git@github.com:narc0tiq/factorio-updater.git and set the UPDATE_SCRIPT config before you try again."
-    exit 1
+    return 1
   fi
 
   # Assume the user wants a dry run? (our only argument to this function)
@@ -486,12 +486,12 @@ update(){
     if ! [ -e "${tmpdir}" ]; then
       if ! as_user "mkdir -p ${tmpdir}"; then
         echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-        exit 1
+        return 1
       fi
     fi
     if ! as_user "test -w ${tmpdir}" ]; then
       echo "Aborting update! Unable to write to tmpdir: ${tmpdir}"
-      exit 1
+      return 1
     fi
   else
     # Create tmpdir and ensure automatic cleanup
@@ -499,7 +499,7 @@ update(){
     tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
     if [ $? -ne 0 ]; then
       echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-      exit 1
+      return 1
     fi
     trap "rm -rf ${tmpdir}" EXIT
   fi
@@ -525,26 +525,26 @@ update(){
     debug "Invocation: ${invocation}"
     debug "${result}"
     echo "Update check failed!"
-    exit 1
+    return 1
   else
     newversion=`echo "${result}" |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
   fi
 
   if [ -z "${newversion}" ]; then
     echo "No new updates for ${package} ${version}"
-    exit 0
+    return 0
   else
     echo "New version ${package} ${newversion}"
   fi
 
   # Go or no Go?
   if [ ${dryrun} -gt 0 ]; then
-    echo "Dry run, not taking further actions!"
+    debug "This is a dry-run, not taking any further actions."
     # allow scripts to read return code 0 for no updates and 2 if there are updates to apply
     if ! [ -z "${newversion}" ]; then
-      exit 2
+      return 2
     fi
-    exit 0
+    return 0
   fi
 
   # Prevent update restart, ie require the server to be stopped before we apply updates
@@ -552,7 +552,7 @@ update(){
     debug "Preventing update restarts ..."
     if is_running; then
       echo "Factorio is running, aborting update - stop the server and re-run the update command!"
-      exit 3
+      return 3
     else
       debug "Server wasn't running, continue with the update."
     fi
@@ -563,7 +563,7 @@ update(){
   # Time to download the updates
   if ! as_user "${invocation}"; then
     echo "Aborting update!"
-    exit 1
+    return 1
   fi
 
   # Stop the server if it is running.
@@ -572,6 +572,10 @@ update(){
   if [ ${was_running} -eq 0 ]; then
     send_cmd "Updating to new Factorio version, be right back"
     stop_service
+    if is_running; then
+      echo "Aborting update! The server is still running."
+      return 1
+    fi
   fi
 
   for patch in $(find ${tmpdir} -type f -name "*.zip" | sort -V); do
@@ -586,7 +590,7 @@ update(){
         echo "You can try to apply it manually with:"
         echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
       fi
-      exit 1
+      return 1
     fi
   done
   
@@ -596,6 +600,7 @@ update(){
   fi
 
   echo "Successfully updated factorio"
+  return 0
 }
 
 run_main(){
@@ -789,6 +794,7 @@ run_main(){
       ;;
     update)
       update "$2"
+      exit $?
       ;;
     inv|invocation)
       echo ${INVOCATION}
