@@ -427,10 +427,14 @@ install(){
     exit 1
   fi
 
-  # Generate default config.ini by creating a save
+  # Generate default config & create a default save-game to play on
   as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save ${EXE_ARGS_GLIBC}"
   if [ $? -eq 0 ]; then
-    echo "Installation complete, edit data/server-settings.json and start your server"
+    as_user "cp ${FACTORIO_PATH}/data/server-settings.example.json ${FACTORIO_PATH}/data/server-settings.json"
+    if [ $? -gt 0 ]; then
+      echo "WARNING! Unable to copy server settings, may need to be resolved manually."
+    fi
+    echo "Installation complete, edit ${FACTORIO_PATH}/data/server-settings.json and start your server"
     exit 0
   else
     echo "Failed to create save, review the output above to recover"
