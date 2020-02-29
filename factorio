@@ -374,20 +374,20 @@ install(){
   if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
     echo "Aborting install! FACTORIO_PATH does not match expected path: ${expected_path}"
     echo "See config option PACKAGE_DIR_NAME for more details"
-    exit 1
+    return 1
   fi
 
   # Prevent accidential overwrites
   if [ -e "${expected_path}" ]; then
     echo "Aborting install, ${FACTORIO_PATH} already exists"
-    exit 1
+    return 1
   fi
 
   tarball=$1
   if ! [ -z "$tarball" ]; then
     if ! [ -f "${tarball}" ]; then
       echo "Install package does not exist! ${tarball}"
-      exit 1
+      return 1
     fi
   else
     downloadlatest=1
@@ -397,7 +397,7 @@ install(){
   if ! test -w "${target}"; then
     echo "Failed to write, aborting install!"
     echo "Install needs to be run as a user with write permissions to ${target}"
-    exit 1
+    return 1
   fi
 
   if [ $downloadlatest ]; then
@@ -409,7 +409,7 @@ install(){
     fi
     if ! wget ${LATEST_HEADLESS_URL} -O - | tar ${TAR_OPTIONS} --directory "${target}"; then
       echo "Install failed!"
-      exit 1
+      return 1
     fi
   else
     echo "Installing ${tarball} ..."
@@ -420,14 +420,14 @@ install(){
     fi
     if ! tar ${TAR_OPTIONS} "${tarball}" --directory "${target}"; then
       echo "Install failed!"
-      exit 1
+      return 1
     fi
   fi
 
   echo "Applying file ownership ..."
   if ! chown -R ${USERNAME}:${USERGROUP} ${FACTORIO_PATH}; then
     echo "Failed to apply ownership ${USERNAME}:${USERGROUP} for ${FACTORIO_PATH}"
-    exit 1
+    return 1
   fi
 
   # Generate default config & create a default save-game to play on
@@ -438,10 +438,10 @@ install(){
       echo "WARNING! Unable to copy server settings, may need to be resolved manually."
     fi
     echo "Installation complete, edit ${FACTORIO_PATH}/data/server-settings.json and start your server"
-    exit 0
+    return 0
   else
     echo "Failed to create save, review the output above to recover"
-    exit 1
+    return 1
   fi
 }
 
@@ -785,6 +785,7 @@ run_main(){
       ;;
     install)
       install "$2"
+      exit $?
       ;;
     update)
       update "$2"
