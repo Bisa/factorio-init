@@ -4,18 +4,26 @@ load 'libs/bats-assert/load'
 
 factorio_script=./factorio
 
-@test "DEBUG=1 produces output" {
+@test ".debug DEBUG=1 produces output" {
     source $factorio_script
     export DEBUG=1
-    run debug "TEST"
+    run debug "TEST" # TODO: find a way to verify stdout vs stderr output
 
     assert_output "DEBUG: TEST"
 }
 
-@test "DEBUG=0 produces no output" {
+@test ".debug DEBUG=0 produces no output" {
     source $factorio_script
     export DEBUG=0
     run debug "TEST"
+
+    assert_output ""
+}
+
+@test ".debug is turned off by default" {
+    source $factorio_script
+    run debug "TEST"
+
     assert_output ""
 }
 

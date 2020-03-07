@@ -10,9 +10,9 @@
 # Description: A init script for Factorio, try the help command
 ### END INIT INFO
 
-debug(){
-  if [ ${DEBUG} -gt 0 ]; then
-    echo "DEBUG: $@" >&2
+debug() {
+  if [ "${DEBUG-0}" -gt 0 ]; then
+    echo "DEBUG: $@"
   fi
 }
 
