@@ -19,7 +19,43 @@ factorio_script=./factorio
     assert_output ""
 }
 
-#@test "load_config() " {}
+@test ".error produces output" {
+    source $factorio_script
+    run error "An error occured!" # TODO: find a way to verify stdout vs stderr output
+
+    assert_output 'An error occured!'
+}
+
+@test ".load_config fails on missing config file" {
+    source $factorio_script
+    export DEBUG=0
+    run load_config "nonexisting_config_file"
+    
+    assert_output "Config file 'nonexisting_config_file' does not exist!"
+    assert_failure 1
+}
+
+@test ".load_config fails on non-readable config file" {
+    config_file="${BATS_TMPDIR}/non-readable"
+    touch "${config_file}"
+    chmod a-r "${config_file}"
+
+    source $factorio_script
+    export DEBUG=0
+    run load_config "${config_file}"
+    
+    assert_output "Unable to read config file '"${config_file}"'!"
+    assert_failure 1
+}
+
+@test ".load_config without args uses default file" {
+    source $factorio_script
+    export DEBUG=1
+    run load_config
+    
+    assert_output "DEBUG: Trying to load config file './config'."
+}
+
 #@test "usage()" {}
 #@test "as_user()" {}
 #@test "is_running()" {}

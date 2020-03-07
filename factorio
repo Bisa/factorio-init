@@ -16,13 +16,25 @@ debug(){
   fi
 }
 
-load_config(){
+error() {
+  echo "$@" 1>&2
+}
+
+load_config() {
+
+  # unless a path is provided as the first argument,
+  # assume there's a "config" file in our current directory.
+  config_file="${1-./config}"
+  debug "Trying to load config file '${config_file}'."
+
+  # check that the file exists
+  [ -f "${config_file}" ] || { error "Config file '${config_file}' does not exist!"; return 1; }
+  # and we can read it
+  [ -r "${config_file}" ] || { error "Unable to read config file '${config_file}'!"; return 1; }
+  # then try to source it
+  source "${config_file}" || { error "Unable to source config file '${config_file}'!"; return 1; }
+
   ME=`whoami`
-  if [ -L $0 ]; then
-    source `readlink -e $0 | sed "s:[^/]*$:config:"`
-  else
-    source `echo $0 | sed "s:[^/]*$:config:"`
-  fi
 
   if [ -z "${SERVICE_NAME}" ]; then
     echo "Couldn't load config file, please edit config.example and rename it to config"
@@ -600,7 +612,8 @@ update(){
 }
 
 run_main(){
-  load_config $@ || return $?
+  config_file=$1; shift
+  load_config "${config_file}" $@ || return $?
     
   case "$1" in
     start)
@@ -800,6 +813,12 @@ run_main(){
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  run_main $@
+  if [ -L ${0} ]; then
+    config_file=`readlink -e ${0} | sed "s:[^/]*$:config:"`
+  else
+    config_file=`echo ${0} | sed "s:[^/]*$:config:"`
+  fi
+
+  run_main $config_file $@
   exit $?
 fi
