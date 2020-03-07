@@ -194,28 +194,32 @@ config_defaults() {
   return 0
 }
   
-usage(){
-  echo "Usage: $0 COMMAND"
-  echo
-  echo "Available commands:"
-  echo -e "   start \t\t\t\t Starts the server"
-  echo -e "   stop \t\t\t\t Stops the server"
-  echo -e "   restart \t\t\t\t Restarts the server"
-  echo -e "   status \t\t\t\t Displays server status"
-  echo -e "   players-online \t\t\t Shows online players"
-  echo -e "   players \t\t\t\t Shows all players"
-  echo -e "   cmd [command/message] \t\t Open interactive commandline or send a single command to the server"
-  echo -e "   chatlog [--tail|-t] \t\t\t Print the current chatlog, optionally tail the log to follow in real time"
-  echo -e "   new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified name using the specified map gen settings and map settings json files"
-  echo -e "   save-game name \t\t\t Stops the server and saves game to specified save"
-  echo -e "   load-save name \t\t\t Stops the server and loads the specified save"
-  echo -e "   install [tarball] \t\t\t Installs the server with optional specified tarball (omit to download and use the latest headless server from Wube)"
-  echo -e "   update [--dry-run] \t\t\t Updates the server"
-  echo -e "   invocation \t\t\t\t Outputs the invocation for debugging purpose"
-  echo -e "   listcommands \t\t\t List all init-commands"
-  echo -e "   listsaves \t\t\t\t List all saves"
-  echo -e "   version \t\t\t\t Prints the binary version"
-  echo -e "   help \t\t\t\t Shows this help message"
+usage() {
+  echo -e "\
+Usage: $0 COMMAND
+
+Available commands:
+  start \t\t\t\t\t\t Starts the server
+  stop \t\t\t\t\t\t\t Stops the server
+  restart \t\t\t\t\t\t Restarts the server
+  status \t\t\t\t\t\t Displays server status
+  players-online \t\t\t\t\t Shows online players
+  players \t\t\t\t\t\t Shows all players
+  cmd [command/message] \t\t\t\t Open interactive commandline or send a single command to the server
+  chatlog [--tail|-t] \t\t\t\t\t Print the current chatlog, optionally tail the log to follow in real time
+  new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified
+  \t\t\t\t\t\t\t name using the specified map gen settings and map settings json files
+  save-game name \t\t\t\t\t Stops the server and saves game to specified save
+  load-save name \t\t\t\t\t Stops the server and loads the specified save
+  install [tarball] \t\t\t\t\t Installs the server with optional specified tarball
+  \t\t\t\t\t\t\t (omit to download and use the latest headless server from Wube)
+  update [--dry-run] \t\t\t\t\t Updates the server
+  invocation \t\t\t\t\t\t Outputs the invocation for debugging purpose
+  listcommands \t\t\t\t\t\t List all init-commands
+  listsaves \t\t\t\t\t\t List all saves
+  version \t\t\t\t\t\t Prints the binary version
+  help \t\t\t\t\t\t\t Shows this help message
+"
 }
 
 as_user() {
@@ -838,7 +842,7 @@ run_main(){
       usage
       ;;
     listcommands)
-      echo `$0 help 2> /dev/null |egrep '^   ' |awk '{ print $1 }'`
+      usage |grep -oP '(?<=  )\w+'
       ;;
     listsaves)
       find ${WRITE_DIR}/saves -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
