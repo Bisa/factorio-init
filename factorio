@@ -21,7 +21,6 @@ error() {
 }
 
 load_config() {
-
   # unless a path is provided as the first argument,
   # assume there's a "config" file in our current directory.
   config_file="${1-./config}"
@@ -34,83 +33,128 @@ load_config() {
   # then try to source it
   source "${config_file}" || { error "Unable to source config file '${config_file}'!"; return 1; }
 
+  config_defaults $@
+  return $?
+}
+
+config_defaults() {
+  command=$1
   ME=`whoami`
 
   if [ -z "${SERVICE_NAME}" ]; then
-    echo "Couldn't load config file, please edit config.example and rename it to config"
-    return 1
+    SERVICE_NAME="Factorio"
   fi
 
-  # Check/load defaults for backwards compatible config options
   if [ -z "${PACKAGE_DIR_NAME}" ]; then
-    PACKAGE_DIR_NAME=factorio
+    PACKAGE_DIR_NAME="factorio"
   fi
+  
   if [ -z "${USERGROUP}" ]; then
     USERGROUP=${USERNAME}
   fi
+
   if [ -z "${HEADLESS}" ]; then
-    # This is a server init script, assume headless default
     HEADLESS=1
   fi
+
+  if [ -z "${UPDATE_EXPERIMENTAL}" ]; then
+    UPDATE_EXPERIMENTAL=0
+  fi  
+
   if [ -z "${LATEST_HEADLESS_URL}" ]; then
-    if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
+    if [ "${UPDATE_EXPERIMENTAL}" -gt 0 ]; then
       LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
     else
       LATEST_HEADLESS_URL="https://www.factorio.com/get-download/stable/headless/linux64"
     fi
   fi
+
   if [ -z "${UPDATE_PREVENT_RESTART}" ]; then
     UPDATE_PREVENT_RESTART=0
   fi
+
   if [ -z "${UPDATE_PERSIST_TMPDIR}" ]; then
     UPDATE_PERSIST_TMPDIR=0
   fi
+
   if [ -z "${NONCMDPATTERN}" ]; then
     NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
   fi
-  if [ -z ${BINARY} ]; then
-    # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
-    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
-    BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
+
+  if [ -z "${FACTORIO_PATH}" ]; then
+    FACTORIO_PATH="/opt/factorio"
   fi
-  if [ -z ${ALT_GLIBC} ]; then
+
+  if [ -z "${BINARY}" ]; then
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+  fi
+
+  if [ -z "${BINARYB}" ]; then
+    BINARYB="${BINARY}"
+  fi
+  
+  if [ -z "${ALT_GLIBC}" ]; then
     ALT_GLIBC=0
   fi
-  if [ -z ${WAIT_PINGPONG} ]; then
+
+  if [ -z "${WAIT_PINGPONG}" ]; then
     WAIT_PINGPONG=0
   fi
-  if [ -z ${ADMINLIST} ]; then
-    ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
+
+  if [ -z "${ADMINLIST}" ]; then
+    ADMINLIST="${FACTORIO_PATH}/data/server-adminlist.json"
   fi
-  if [ ${ALT_GLIBC} -gt 0 ]; then
-    # If ALT_GLIBC is non 0 then activate alternative glibc root here
-    BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${FACTORIO_PATH}/bin/x64/factorio"
-    BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
+
+  if [ "${ALT_GLIBC}" -gt 0 ]; then
+    if [ -z "${ALT_GLIBC_DIR}" ]; then
+      ALT_GLIBC_DIR="/opt/glibc-2.18"
+    fi
+
+    if [ -z "${ALT_GLIBC_VER}" ]; then
+      ALT_GLIBC_VER="2.18"
+    fi
+    
+    # flip BINARY to include alt glibc
+    oldbinary="${BINARY}"
+    BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${oldbinary}"
     EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
   fi
   
+  if [ -z "${FCONF}" ]; then
+    FCONF="${FACTORIO_PATH}/config/config.ini"
+  fi
+
+  if [ -z "${SERVER_SETTINGS}" ]; then
+    SERVER_SETTINGS="${FACTORIO_PATH}/data/server-settings.json"
+  fi
+
+  if [ -z "${SAVELOG}" ]; then
+    SAVELOG=0
+  fi
+
+  if [ -z "${PORT}" ]; then
+    PORT=34197
+  fi
+
   # perform some sanity checks in order to properly load the configuration
-  case "$1" in
+  case $command in
     install|help|listcommands|version|"")
+      # skip
       ;;
     *)
-      if ! [ -e ${BINARYB} ]; then
-        echo "Could not find factorio binary! ${BINARYB}"
-        echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
+      if ! [ -e "${BINARYB}" ]; then
+        error "Could not find factorio binary! ${BINARYB}"
+        error "(if you store your binary some place else, override BINARY='/your/path' in the config)"
         return 1
-      fi
-    
-      if [ -z ${FCONF} ]; then
-        FCONF="${FACTORIO_PATH}/config/config.ini"
       fi
     
       if ! [ -e "${SERVER_SETTINGS}" ]; then
-        echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
-        echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
+        error "Could not find factorio server settings file: ${SERVER_SETTINGS}"
+        error "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
         return 1
       fi
     
-      if ! [ -e ${FCONF} ]; then
+      if ! [ -e "${FCONF}" ]; then
         echo "Could not find factorio config file: ${FCONF}"
         echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
         echo "(also make sure you have a save to run or the server will not start)"
@@ -121,6 +165,7 @@ load_config() {
         echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
         return 1
       fi
+
       if [ -z "${WRITE_DIR}" ]; then
         # figure out the write-data path (where factorio looks for saves and mods)
         # Note - this is a hefty little operation, possible cause of head ache down the road
@@ -132,23 +177,21 @@ load_config() {
       debug "write path: $WRITE_DIR"
     
       PIDFILE="${WRITE_DIR}/server.pid"
-    
+
       if [ -z "${FIFO}" ];then
         FIFO="${WRITE_DIR}/server.fifo"
       fi
-    
+
       if [ -z "${CMDOUT}" ];then
         CMDOUT="${WRITE_DIR}/server.out"
       fi
-    
-      if [ -z "${SAVELOG}" ]; then
-        SAVELOG=0
-      fi
-    
+
       # Finally, set up the invocation
       INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} ${EXTRA_BINARGS}"
       ;;
   esac
+
+  return 0
 }
   
 usage(){

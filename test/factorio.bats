@@ -64,6 +64,7 @@ factorio_script=./factorio
     assert_output "DEBUG: Trying to load config file './config'."
 }
 
+#@test "config_defaults() {}"
 #@test "usage()" {}
 #@test "as_user()" {}
 #@test "is_running()" {}
