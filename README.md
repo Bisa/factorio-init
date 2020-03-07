@@ -124,11 +124,11 @@ When contributing to this repo, please ensure your contribution is covered by at
 Example:
 ```bash
 @test "DEBUG=1 produces output" {
+    # To access functions within ./factorio, source it then use the run command:
+    source ./factorio
     export DEBUG=1
-    # The ./factorio script is sourced before running any tests
-    # and to access the functions within, use the run command:
     run debug "TEST"
-    
+    # use the various asserts from bats-assert
     assert_output "DEBUG: TEST"
 }
 ``` 

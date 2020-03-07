@@ -2,12 +2,10 @@
 load 'libs/bats-support/load'
 load 'libs/bats-assert/load'
 
-setup() {
-    # script under test
-    source ./factorio
-}
+factorio_script=./factorio
 
 @test "DEBUG=1 produces output" {
+    source $factorio_script
     export DEBUG=1
     run debug "TEST"
 
@@ -15,6 +13,7 @@ setup() {
 }
 
 @test "DEBUG=0 produces no output" {
+    source $factorio_script
     export DEBUG=0
     run debug "TEST"
     assert_output ""
