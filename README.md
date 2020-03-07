@@ -91,6 +91,48 @@ Note that systemd won't be able to keep track of the server process if you use t
  # Do not forget to enable the service at boot if you want that.
  ```
 
+# Tests
+Testing is done using [bats](https://github.com/sstephenson/bats), [bats-assert](https://github.com/ztombol/bats-assert) and [bats-support](https://github.com/ztombol/bats-support).
+
+To run the tests yourself:
+- First init and update the submodules
+```bash
+$ git submodule init
+$ git submodule update
+```
+- Then execute the ```tests/factorio.bats``` file.
+
+Here is an example with two tests, one passing and one failing - do not open pull requests with failing tests please ;)
+
+```bash
+$ ./tests/factorio.bats
+ ✓ DEBUG=1 produces output
+ ✗ DEBUG=0 produces no output
+   (from function `assert_output' in file test/libs/bats-assert/src/assert.bash, line 239,
+    in test file test/factorio.bats, line 19)
+     `assert_output ""' failed
+   
+   -- output differs --
+   expected : 
+   actual   : DEBUG: TEST
+   --
+```
+
+## Writing tests
+When contributing to this repo, please ensure your contribution is covered by at least one test in ```tests/factorio.bats```.
+
+Example:
+```bash
+@test "DEBUG=1 produces output" {
+    export DEBUG=1
+    # The ./factorio script is sourced before running any tests
+    # and to access the functions within, use the run command:
+    run debug "TEST"
+    
+    assert_output "DEBUG: TEST"
+}
+``` 
+
 # Thank You
 - To all who find this script useful in one way or the other
 - A big thank you to [Wube](https://www.factorio.com/team) for making [Factorio](https://www.factorio.com/)
