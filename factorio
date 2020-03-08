@@ -429,8 +429,8 @@ install(){
   # name used in FACTORIO_PATH
   expected_path="`dirname ${FACTORIO_PATH}`/${PACKAGE_DIR_NAME}"
   if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
-    echo "Aborting install! FACTORIO_PATH does not match expected path: ${expected_path}"
-    echo "See config option PACKAGE_DIR_NAME for more details"
+    error "Aborting install! FACTORIO_PATH does not match expected path: '${expected_path}'"
+    error "See config option PACKAGE_DIR_NAME for more details."
     return 1
   fi
 

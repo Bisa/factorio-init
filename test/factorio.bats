@@ -101,6 +101,22 @@ factorio_script=./factorio
     check_config_defaults_command ""
 }
 
+@test ".install fails when install directory is not expected path" {
+    config_file="${BATS_TMPDIR}/readable"
+    touch "${config_file}"
+    
+    source $factorio_script
+    load_config ./config.example
+    export FACTORIO_PATH=/opt/a-path-we-do-not-expect
+    
+    
+    run install
+    assert_output "\
+Aborting install! FACTORIO_PATH does not match expected path: '/opt/factorio'
+See config option PACKAGE_DIR_NAME for more details."
+    assert_failure 1
+}
+
 #@test "config_defaults() {}"
 #@test "usage()" {}
 #@test "as_user()" {}
