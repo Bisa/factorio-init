@@ -100,9 +100,26 @@ service factorio help
 
 Testing is done using [bats](https://github.com/sstephenson/bats), [bats-assert](https://github.com/ztombol/bats-assert) and [bats-support](https://github.com/ztombol/bats-support).
 
-To run the tests yourself:
+### Run tests with Docker
 
-- First init and update the submodules
+- First init and update the submodules (if you did not already)
+
+```bash
+git submodule init
+git submodule update
+```
+
+- Then build the docker image (a modified bash:latest by default, modify ```./Dockerfile``` and or change argument ${bash_version} as you see fit)
+
+```docker build --tag bats/bats:latest .```
+
+- Then run the image, mounting the current directory as a volume and removing the container once it's done
+
+```docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init bats/bats:latest```
+
+### Run tests manually
+
+- First init and update the submodules (if you did not already)
 
 ```bash
 git submodule init
@@ -111,25 +128,9 @@ git submodule update
 
 - Then execute the ```tests/factorio.bats``` file.
 
-Here is an example with two tests, one passing and one failing - do not open pull requests with failing tests please ;)
-
-```bash
-./tests/factorio.bats
- ✓ DEBUG=1 produces output
- ✗ DEBUG=0 produces no output
-   (from function `assert_output' in file test/libs/bats-assert/src/assert.bash, line 239,
-    in test file test/factorio.bats, line 19)
-     `assert_output ""' failed
-
-   -- output differs --
-   expected : 
-   actual   : DEBUG: TEST
-   --
-```
-
 ### Writing tests
 
-When contributing to this repo, please ensure your contribution is covered by at least one test in ```tests/factorio.bats```.
+When contributing to this repo, please ensure your contribution is covered by at least one test in ```tests/factorio.bats``` - and do not create pull requests with failing tests thank you ;)
 
 Example:
 
