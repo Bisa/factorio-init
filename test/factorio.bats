@@ -61,7 +61,7 @@ factorio_script=./factorio
     export DEBUG=1
     run load_config
     
-    assert_output "DEBUG: Trying to load config file './config'."
+    assert_line --index 0 "DEBUG: Trying to load config file './config'."
 }
 
 #@test "config_defaults() {}"
