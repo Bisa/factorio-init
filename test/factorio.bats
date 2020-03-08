@@ -64,6 +64,22 @@ factorio_script=./factorio
     assert_line --index 0 "DEBUG: Trying to load config file './config'."
 }
 
+@test ".load_config sets default FACTORIO_PATH" {
+    source $factorio_script
+    unset FACTORIO_PATH
+    load_config ./config.example
+    assert_equal "${FACTORIO_PATH}" '/opt/factorio'
+}
+
+@test ".load_config does not override FACTORIO_PATH" {
+    source $factorio_script
+    config_file="${BATS_TMPDIR}/readable"
+    touch "${config_file}"
+    export FACTORIO_PATH="-my-predefined-path-"
+    load_config "${config_file}"
+    assert_equal "${FACTORIO_PATH}" '-my-predefined-path-'
+}
+
 @test ".load_config passes command to .config_defaults" {
     config_file="${BATS_TMPDIR}/readable"
     touch "${config_file}"
