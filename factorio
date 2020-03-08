@@ -23,7 +23,7 @@ error() {
 load_config() {
   # unless a path is provided as the first argument,
   # assume there's a "config" file in our current directory.
-  config_file="${1-./config}"
+  config_file="${1-./config}"; shift
   debug "Trying to load config file '${config_file}'."
 
   # check that the file exists
@@ -33,12 +33,14 @@ load_config() {
   # then try to source it
   source "${config_file}" || { error "Unable to source config file '${config_file}'!"; return 1; }
 
-  config_defaults $@
+  config_defaults $1
   return $?
 }
 
 config_defaults() {
   command=$1
+  debug "Check/Loading config defaults for command '${command}'"
+
   ME=`whoami`
 
   if [ -z "${SERVICE_NAME}" ]; then
@@ -139,7 +141,7 @@ config_defaults() {
   # perform some sanity checks in order to properly load the configuration
   case $command in
     install|help|listcommands|version|"")
-      # skip
+      debug "Skip check/loading defaults for command '${command}'"
       ;;
     *)
       if ! [ -e "${BINARYB}" ]; then

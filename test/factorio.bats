@@ -64,6 +64,27 @@ factorio_script=./factorio
     assert_line --index 0 "DEBUG: Trying to load config file './config'."
 }
 
+@test ".load_config passes command to .config_defaults" {
+    config_file="${BATS_TMPDIR}/readable"
+    touch "${config_file}"
+    
+    source $factorio_script
+    export DEBUG=1
+    
+    run load_config "${config_file}" install
+    assert_line "DEBUG: Check/Loading config defaults for command 'install'"    
+}
+
+@test ".config_defualts skips 'install' command" {
+    load 'config-helper'
+    check_config_defaults_command "install"
+}
+
+@test ".config_defualts skips '' (empty) command" {
+    load 'config-helper'
+    check_config_defaults_command ""
+}
+
 #@test "config_defaults() {}"
 #@test "usage()" {}
 #@test "as_user()" {}
