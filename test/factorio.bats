@@ -116,6 +116,24 @@ factorio_script=./factorio
     check_config_defaults_skip_command "version"
 }
 
+@test ".run_main 'help' works without config" {
+    source $factorio_script
+    run run_main "" help
+    
+    assert_line --regexp '^Usage: .+ COMMAND$'
+    assert_line --index 1 'Available commands:'
+    assert_success 1
+}
+
+@test ".run_main 'listcommands' works without config" {
+    source $factorio_script
+    run run_main "" listcommands
+    
+    assert_line --index 0 'start'
+    assert_line --index 17 'help'
+    assert_success 1
+}
+
 @test ".install fails when install directory is not expected path" {
     config_file="${BATS_TMPDIR}/readable"
     touch "${config_file}"

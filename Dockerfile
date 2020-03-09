@@ -3,6 +3,7 @@ ARG bash_version=latest
 FROM bash:${bash_version}
 
 RUN apk add --no-cache parallel
+RUN apk add --no-cache grep
 
 RUN addgroup factorio
 RUN adduser -S -D factorio factorio

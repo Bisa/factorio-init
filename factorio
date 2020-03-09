@@ -661,10 +661,20 @@ update(){
 }
 
 run_main(){
+  
   config_file=$1; shift
-  load_config "${config_file}" $@ || return $?
-    
-  case "$1" in
+  command=$1
+
+  case "${command}" in
+    help|listcommands)
+      debug "Skip loading config for command '${command}'"
+      ;;
+    *)
+      load_config "${config_file}" $@ || return $?
+      ;;
+  esac
+  
+  case "${command}" in
     start)
       start_service
       return $?
@@ -840,7 +850,7 @@ run_main(){
     inv|invocation)
       echo ${INVOCATION}
       ;;
-    help|--help|-h)
+    help)
       usage
       ;;
     listcommands)
