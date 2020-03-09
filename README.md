@@ -117,7 +117,7 @@ git submodule update
 
 ```docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init bats/bats:latest test```
 
-Using parallel, adding ```--jobs 10``` to the above (adjust the number accordingly) will significantly decrease the speed at which the tests are being executed.
+Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will significantly increase the speed at which the tests are being executed.
 
 ### Run tests manually
 
