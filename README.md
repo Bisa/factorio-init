@@ -98,7 +98,7 @@ service factorio help
 
 ## Tests
 
-Testing is done using [bats](https://github.com/sstephenson/bats), [bats-assert](https://github.com/ztombol/bats-assert) and [bats-support](https://github.com/ztombol/bats-support).
+Testing is done using [bats-core](https://github.com/bats-core/bats-core), [bats-assert](https://github.com/ztombol/bats-assert) and [bats-support](https://github.com/ztombol/bats-support).
 
 ### Run tests with Docker
 
@@ -115,7 +115,9 @@ git submodule update
 
 - Then run the image, mounting the current directory as a volume and removing the container once it's done
 
-```docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init bats/bats:latest```
+```docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init bats/bats:latest test```
+
+Using parallel, adding ```--jobs 10``` to the above (adjust the number accordingly) will significantly decrease the speed at which the tests are being executed.
 
 ### Run tests manually
 
