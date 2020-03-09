@@ -91,14 +91,29 @@ factorio_script=./factorio
     assert_line "DEBUG: Check/Loading config defaults for command 'install'"    
 }
 
-@test ".config_defualts skips 'install' command" {
-    load 'config-helper'
-    check_config_defaults_command "install"
-}
-
 @test ".config_defualts skips '' (empty) command" {
     load 'config-helper'
-    check_config_defaults_command ""
+    check_config_defaults_skip_command ""
+}
+
+@test ".config_defualts skips 'install' command" {
+    load 'config-helper'
+    check_config_defaults_skip_command "install"
+}
+
+@test ".config_defualts skips 'help' command" {
+    load 'config-helper'
+    check_config_defaults_skip_command "help"
+}
+
+@test ".config_defualts skips 'listcommands' command" {
+    load 'config-helper'
+    check_config_defaults_skip_command "listcommands"
+}
+
+@test ".config_defualts skips 'version' command" {
+    load 'config-helper'
+    check_config_defaults_skip_command "version"
 }
 
 @test ".install fails when install directory is not expected path" {

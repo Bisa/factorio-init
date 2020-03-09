@@ -1,6 +1,6 @@
 #!/bin/bash
 
-check_config_defaults_command() {
+check_config_defaults_skip_command() {
     config_file="${BATS_TMPDIR}/readable"
     touch "${config_file}"
     
