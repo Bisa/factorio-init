@@ -45,15 +45,6 @@ SAVELOG=0
 # Useful for Cloud providers where VMs may start faster than their Internet connectivity is plumbed.
 WAIT_PINGPONG=0
 
-# Factorio comes packaged in a tarball containing the directory named "factorio"
-# when using this scripts update/install command we expect to see this very
-# directory. If you want to supply your own update/install tar other than what you can download
-# from factorio.com/download-headless you can use this option to tell the script this is ok.
-#
-# If you place your factorio install within a directory named "factorio" and you update/install
-# with the official tarball you can safely ignore this option.
-PACKAGE_DIR_NAME=factorio
-
 #
 # narcotiq made a sweet update script for factorio and by cloning into this
 # you can simply run "factorio update" provided you configure the below arguments

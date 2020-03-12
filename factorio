@@ -46,10 +46,6 @@ config_defaults() {
   if [ -z "${SERVICE_NAME}" ]; then
     SERVICE_NAME="Factorio"
   fi
-
-  if [ -z "${PACKAGE_DIR_NAME}" ]; then
-    PACKAGE_DIR_NAME="factorio"
-  fi
   
   if [ -z "${USERGROUP}" ]; then
     USERGROUP=${USERNAME}
@@ -424,36 +420,27 @@ test_deps(){
 }
 
 install(){
-  # Factorio comes packaged in a directory named "factorio"
-  # Unless overriden in the config we will presume this is also the
-  # name used in FACTORIO_PATH
-  expected_path="`dirname ${FACTORIO_PATH}`/${PACKAGE_DIR_NAME}"
-  if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
-    error "Aborting install! FACTORIO_PATH does not match expected path: '${expected_path}'"
-    error "See config option PACKAGE_DIR_NAME for more details."
-    return 1
-  fi
-
   # Prevent accidential overwrites
-  if [ -e "${expected_path}" ]; then
-    echo "Aborting install, ${FACTORIO_PATH} already exists"
-    return 1
+  if [ -e "${FACTORIO_PATH}" ]; then
+    if ! [ -z "`ls -A ${FACTORIO_PATH} 2>&1`" ]; then
+      error "Aborting install, '${FACTORIO_PATH}' is not empty!"
+      return 1
+    fi
   fi
 
   tarball=$1
-  if ! [ -z "$tarball" ]; then
+  if ! [ -z "${tarball}" ]; then
     if ! [ -f "${tarball}" ]; then
-      echo "Install package does not exist! ${tarball}"
+      error "Aborting install, '${tarball}' does not exist!"
       return 1
     fi
   else
     downloadlatest=1
   fi
 
-  target="`dirname ${FACTORIO_PATH}`"
+  target="${FACTORIO_PATH}"
   if ! test -w "${target}"; then
-    echo "Failed to write, aborting install!"
-    echo "Install needs to be run as a user with write permissions to ${target}"
+    error "Aborting install, unable to write to '${target}'!"
     return 1
   fi
 

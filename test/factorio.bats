@@ -134,19 +134,40 @@ factorio_script=./factorio
     assert_success 1
 }
 
-@test ".install fails when install directory is not expected path" {
-    config_file="${BATS_TMPDIR}/readable"
-    touch "${config_file}"
+@test ".install fails when FACTORIO_PATH is not empty" {
+    load 'tmp-helper'
+
+    source $factorio_script
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_nonempty_dir`"
+    
+    run install
+    assert_output "Aborting install, '${FACTORIO_PATH}' is not empty!"
+    assert_failure 1
+}
+
+@test ".install fails when tarball is missing" {
+    load 'tmp-helper'
     
     source $factorio_script
     load_config ./config.example
-    export FACTORIO_PATH=/opt/a-path-we-do-not-expect
     
-    
+    nofile="`create_nonexisting_file tarball`"
+    run install "${nofile}"
+    assert_output "Aborting install, '"${nofile}"' does not exist!"
+    assert_failure 1
+}
+
+@test ".install fails when FACTORIO_PATH is not writable" {
+    load 'tmp-helper'
+
+    source $factorio_script
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
+    chmod a-w "${FACTORIO_PATH}"
+
     run install
-    assert_output "\
-Aborting install! FACTORIO_PATH does not match expected path: '/opt/factorio'
-See config option PACKAGE_DIR_NAME for more details."
+    assert_output "Aborting install, unable to write to '${FACTORIO_PATH}'!"
     assert_failure 1
 }
 
