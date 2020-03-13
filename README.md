@@ -109,17 +109,25 @@ git submodule init
 git submodule update
 ```
 
-- Then build the docker image (a modified bash:latest by default, modify ```./Dockerfile``` and or change argument ${bash_version} as you see fit)
+- Then build the docker image (a modified ubuntu:latest by default)
 
-```docker build --tag bats/bats:latest .```
+```bash
+docker build --tag finit:latest .
+```
 
-- Then run the image, mounting the current directory as a volume and removing the container once it's done
+Adding ```--target no-test-resources``` to the build command will avoid downloading test resources online but it will also skip tests that rely on the resources(!)
 
-```docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init bats/bats:latest test```
+- Then run the image, mounting the current directory and removing the container once it's done
 
-Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will significantly increase the speed at which the tests are being executed.
+```bash
+docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest test
+```
+
+Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.
 
 ### Run tests manually
+
+Please note that some tests will be skipped unless you run them with the docker image, running them manually and getting them to work requires more set-up but is a quick way to get started.
 
 - First init and update the submodules (if you did not already)
 
@@ -128,11 +136,15 @@ git submodule init
 git submodule update
 ```
 
-- Then execute the ```tests/factorio.bats``` file.
+- Then run the tests
+
+```bash
+./tests/libs/bats-core/bin/bats test
+```
 
 ### Writing tests
 
-When contributing to this repo, please ensure your contribution is covered by at least one test in ```tests/factorio.bats``` - and do not create pull requests with failing tests thank you ;)
+When contributing to this repo, please ensure your contribution is covered by at least one test in ```test/factorio.bats``` - and do not create pull requests with failing tests thank you ;)
 
 Example:
 

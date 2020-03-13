@@ -34,6 +34,13 @@ factorio_script=./factorio
     assert_output 'An error occured!'
 }
 
+@test ".info produces output" {
+    source $factorio_script
+    run info "Informative text" # TODO: find a way to verify stdout vs stderr output
+
+    assert_output 'Informative text'
+}
+
 @test ".load_config fails on missing config file" {
     source $factorio_script
     export DEBUG=0
@@ -136,6 +143,9 @@ factorio_script=./factorio
 
 @test ".install fails when FACTORIO_PATH is not empty" {
     load 'tmp-helper'
+    load 'http-mock-helper'
+    mock_curl_fail
+    mock_wget_fail
 
     source $factorio_script
     load_config ./config.example
@@ -146,8 +156,70 @@ factorio_script=./factorio
     assert_failure 1
 }
 
+@test ".install fails when FACTORIO_PATH is not writable" {
+    load 'tmp-helper'
+    load 'http-mock-helper'
+    mock_curl_fail
+    mock_wget_fail
+
+    source $factorio_script
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
+    chmod a-w "${FACTORIO_PATH}"
+
+    run install
+    assert_output "Aborting install, unable to write to '${FACTORIO_PATH}'!"
+    assert_failure 1
+}
+
+@test ".install fails on curl error" {
+    load 'tmp-helper'
+    load 'http-mock-helper'
+    source $factorio_script
+
+    mock_curl "${CURL_LATEST_STABLE_HEAD_CURLERR}" 1
+    mock_wget_fail
+
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
+    DEBUG=1
+
+    run install
+    
+    assert_output "\
+DEBUG: Checking for latest headless version.
+curl: (X) We ran into curl error X
+Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
+    assert_failure 1
+}
+
+@test ".install fails on non HTTP 200 status" {
+    load 'tmp-helper'
+    load 'http-mock-helper'
+    source $factorio_script
+    
+    mock_curl "${CURL_LATEST_STABLE_HEAD_302_503}" 0
+    mock_wget_fail
+    
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+    INSTALL_CACHE_TAR=1
+    USERNAME=`whoami`
+    USERGROUP=`whoami`
+    DEBUG=1
+
+    run install
+    
+    assert_line "Aborting install, expected HTTP 200 from '${LATEST_HEADLESS_URL}', got '503'."
+    assert_failure 1
+}
+
 @test ".install fails when tarball is missing" {
     load 'tmp-helper'
+    load 'http-mock-helper'
+    mock_curl_fail
+    mock_wget_fail
     
     source $factorio_script
     load_config ./config.example
@@ -158,17 +230,50 @@ factorio_script=./factorio
     assert_failure 1
 }
 
-@test ".install fails when FACTORIO_PATH is not writable" {
+@test ".install uses cached tarball" {
+    [ -z "${FACTORIO_INIT_WITH_TEST_RESOURCES}" ] && skip "We are not running tests with resources"
     load 'tmp-helper'
-
+    load 'http-mock-helper'
     source $factorio_script
+    
+    mock_curl "${CURL_LATEST_STABLE_HEAD_302_200}" 0
+    mock_wget_fail
+    
     load_config ./config.example
     FACTORIO_PATH="`create_tmp_empty_dir`"
-    chmod a-w "${FACTORIO_PATH}"
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+    INSTALL_CACHE_TAR=1
+    USERNAME=`whoami`
+    USERGROUP=`whoami`
+    DEBUG=1
 
     run install
-    assert_output "Aborting install, unable to write to '${FACTORIO_PATH}'!"
-    assert_failure 1
+    
+    assert_line "Installation complete, edit '${FACTORIO_PATH}/data/server-settings.json' and start your server."
+    assert_success
+}
+
+@test ".install uses provided tarball" {
+    [ -z "${FACTORIO_INIT_WITH_TEST_RESOURCES}" ] && skip "We are not running tests with resources"
+    load 'tmp-helper'
+    load 'http-mock-helper'
+    source $factorio_script
+
+    mock_curl_fail
+    mock_wget_fail
+    
+    load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+    DEBUG=1
+    tarball="/tmp/factorio_headless_x64_0.17.79.tar.xz"
+
+    run install "${tarball}"
+    
+    refute_line "DEBUG: Found cached '${tarball}'."
+    refute_line "DEBUG: No cache hit for '${filename}'."
+    assert_line "Installation complete, edit '${FACTORIO_PATH}/data/server-settings.json' and start your server."
+    assert_success
 }
 
 #@test "config_defaults() {}"

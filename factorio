@@ -20,6 +20,10 @@ error() {
   echo "$@" 1>&2
 }
 
+info() {
+  echo "$@"
+}
+
 load_config() {
   # unless a path is provided as the first argument,
   # assume there's a "config" file in our current directory.
@@ -132,6 +136,14 @@ config_defaults() {
 
   if [ -z "${PORT}" ]; then
     PORT=34197
+  fi
+
+  if [ -z "${INSTALL_CACHE_TAR}" ]; then
+    INSTALL_CACHE_TAR=0
+  fi
+
+  if [ -z "${INSTALL_CACHE_DIR}" ]; then
+    INSTALL_CACHE_DIR=/tmp/factorio-install.cache
   fi
 
   # perform some sanity checks in order to properly load the configuration
@@ -428,14 +440,12 @@ install(){
     fi
   fi
 
-  tarball=$1
-  if ! [ -z "${tarball}" ]; then
-    if ! [ -f "${tarball}" ]; then
-      error "Aborting install, '${tarball}' does not exist!"
-      return 1
-    fi
-  else
+  tarball="$1"
+  if [ -z "${tarball}" ]; then
     downloadlatest=1
+  elif ! [ -e "${tarball}" ]; then
+    error "Aborting install, '${tarball}' does not exist!"
+    return 1
   fi
 
   target="${FACTORIO_PATH}"
@@ -444,47 +454,88 @@ install(){
     return 1
   fi
 
-  if [ $downloadlatest ]; then
-    LATEST_HEADLESS_URL_REDIRECT_FILENAME=$(curl ${LATEST_HEADLESS_URL} -s -L -I -o /dev/null -w '%{url_effective}')
-    if [[ $LATEST_HEADLESS_URL_REDIRECT_FILENAME == *"tar.xz"* ]]; then 
-      TAR_OPTIONS="-xJv"
-    else
-      TAR_OPTIONS="-xzv"
-    fi
-    if ! wget ${LATEST_HEADLESS_URL} -O - | tar ${TAR_OPTIONS} --directory "${target}"; then
-      echo "Install failed!"
+  if [ "${downloadlatest}" = 1 ]; then
+    # fetch a http HEAD response, we need it to know what to download later
+    debug "Checking for latest headless version."
+    httpresponse=`curl -LIs "${LATEST_HEADLESS_URL}" 2>&1`
+    if [ $? -gt 0 ]; then
+      info "${httpresponse}"
+      error "Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
       return 1
-    fi
-  else
-    echo "Installing ${tarball} ..."
-    if [[ $tarball == *"tar.xz"* ]]; then 
-      TAR_OPTIONS="-xJvf"
     else
-      TAR_OPTIONS="-xzvf"
+      httpstatus=`echo "${httpresponse}" |grep HTTP |tail -n -1 |grep -oP '(?<= )\d{3}(?= )'`
+      if ! [ "${httpstatus}" = "200" ]; then
+        info "${httpresponse}"
+        error "Aborting install, expected HTTP 200 from '${LATEST_HEADLESS_URL}', got '${httpstatus}'."
+        return 1
+      fi
     fi
-    if ! tar ${TAR_OPTIONS} "${tarball}" --directory "${target}"; then
-      echo "Install failed!"
-      return 1
+    
+    # parse the response
+    
+
+    filename=`echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1`
+    location=`echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1`
+    debug "Found, latest version: '${filename}'"
+
+    if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
+      # we want to cache the tarballs, ensure we have somewhere to save them
+      if ! [ -e "${INSTALL_CACHE_DIR}" ]; then
+        if ! as_user "mkdir -p \"${INSTALL_CACHE_DIR}\""; then
+          error "Aborting install, unable to create cache '${INSTALL_CACHE_DIR}'."
+          return 1
+        fi
+      fi
+      if ! as_user "test -w \"${INSTALL_CACHE_DIR}\"" ]; then
+        error "Aborting install, unable to write to cache '${INSTALL_CACHE_DIR}'."
+        return 1
+      fi
+      # we have a usable cache dir, check if there's a hit for our wanted tarball
+      tarball="${INSTALL_CACHE_DIR}/${filename}"
+      if [ -f "${tarball}" ]; then
+        debug "Found cached '${tarball}'."
+      else
+        debug "No cache hit for '${filename}'."
+        tarball=
+      fi
     fi
   fi
-
-  echo "Applying file ownership ..."
-  if ! chown -R ${USERNAME}:${USERGROUP} ${FACTORIO_PATH}; then
-    echo "Failed to apply ownership ${USERNAME}:${USERGROUP} for ${FACTORIO_PATH}"
-    return 1
+  
+  if [ -z "${tarball}" ]; then
+    if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
+      tarball="${INSTALL_CACHE_DIR}/${filename}"
+      if ! as_user "wget -O \"${tarball}\" \"${LATEST_HEADLESS_URL}\""; then
+        error "Aborting install, unable to download & cache '${tarball}'."
+        return 1
+      fi
+      if ! as_user "tar --strip-components 1 -xf \"${tarball}\" -C \"${target}\""; then
+        error "Aborting install, unable to extract '${tarball}'."
+        return 1
+      fi  
+    else
+      if ! as_user "wget -O - \"${LATEST_HEADLESS_URL}\" |tar --strip-components 1 -xC \"${target}\""; then
+        error "Aborting install, unable to download and extract tarball."
+        return 1
+      fi
+    fi
+  else
+    if ! as_user "tar --strip-components 1 -xf \"${tarball}\" -C \"${target}\""; then
+      error "Aborting install, unable to extract '${tarball}'."
+      return 1
+    fi
   fi
 
   # Generate default config & create a default save-game to play on
-  as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save ${EXE_ARGS_GLIBC}"
+  as_user "\"${BINARY}\" --create \"${target}/saves/server-save\" ${EXE_ARGS_GLIBC}"
   if [ $? -eq 0 ]; then
-    as_user "cp ${FACTORIO_PATH}/data/server-settings.example.json ${FACTORIO_PATH}/data/server-settings.json"
+    as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""
     if [ $? -gt 0 ]; then
-      echo "WARNING! Unable to copy server settings, may need to be resolved manually."
+      error "WARNING! Unable to copy server settings, may need to be resolved manually."
     fi
-    echo "Installation complete, edit ${FACTORIO_PATH}/data/server-settings.json and start your server"
+    info "Installation complete, edit '${target}/data/server-settings.json' and start your server."
     return 0
   else
-    echo "Failed to create save, review the output above to recover"
+    error "Failed to create save, review the output above to recover"
     return 1
   fi
 }
