@@ -21,6 +21,7 @@ USER $factorio_group
 RUN mkdir /home/$factorio_user/.parallel
 RUN touch /home/$factorio_user/.parallel/will-cite
 
+WORKDIR /opt/factorio-init
 ENTRYPOINT ["bash", "/opt/factorio-init/test/libs/bats-core/bin/bats"]
 
 ### Build onto the base, add test resources:

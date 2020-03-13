@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# git config --local core.hooksPath .githooks
+
+# find out where this repo is situated
+root_dir=`git rev-parse --show-toplevel`
+
+# setup some tags
+image_id="finit"
+base_tag="latest"
+with_resources="${image_id}:${base_tag}-with-resources"
+sans_resources="${image_id}:${base_tag}-sans-resources"
+
+# run local tests
+"${root_dir}/test/libs/bats-core/bin/bats" "${root_dir}/test" --jobs 10 &&
+# build docker images
+docker build --tag "$with_resources" "${root_dir}" &&
+docker build --target no-test-resources --tag "$sans_resources" "${root_dir}" &&
+# run tests on docker
+docker run -t --rm -v "$root_dir:/opt/factorio-init" "$sans_resources" --jobs 10 test &&
+docker run -t --rm -v "$root_dir:/opt/factorio-init" "$with_resources" --jobs 10 test
+
+exit $?
