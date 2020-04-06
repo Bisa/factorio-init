@@ -3,7 +3,7 @@
 # git config --local core.hooksPath .githooks
 
 # find out where this repo is situated
-root_dir=`git rev-parse --show-toplevel`
+root_dir="$(git rev-parse --show-toplevel)"
 
 # setup some tags
 image_id="finit"
@@ -11,6 +11,8 @@ base_tag="latest"
 with_resources="${image_id}:${base_tag}-with-resources"
 sans_resources="${image_id}:${base_tag}-sans-resources"
 
+# do shellcheck on factorio script
+docker run --rm -v "$root_dir:/mnt" koalaman/shellcheck:stable factorio &&
 # run local tests
 "${root_dir}/test/libs/bats-core/bin/bats" "${root_dir}/test" --jobs 10 &&
 # build docker images

@@ -12,16 +12,16 @@
 
 debug() {
   if [ "${DEBUG-0}" -gt 0 ]; then
-    echo "DEBUG: $@"
+    echo "DEBUG: $*"
   fi
 }
 
 error() {
-  echo "$@" 1>&2
+  echo "$*" 1>&2
 }
 
 info() {
-  echo "$@"
+  echo "$*"
 }
 
 load_config() {
@@ -35,9 +35,10 @@ load_config() {
   # and we can read it
   [ -r "${config_file}" ] || { error "Unable to read config file '${config_file}'!"; return 1; }
   # then try to source it
+  # shellcheck disable=SC1090
   source "${config_file}" || { error "Unable to source config file '${config_file}'!"; return 1; }
 
-  config_defaults $1
+  config_defaults "$1"
   return $?
 }
 
@@ -45,7 +46,7 @@ config_defaults() {
   command=$1
   debug "Check/Loading config defaults for command '${command}'"
 
-  ME=`whoami`
+  ME=$(whoami)
 
   if [ -z "${SERVICE_NAME}" ]; then
     SERVICE_NAME="Factorio"
@@ -182,7 +183,7 @@ config_defaults() {
         # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
         # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
         debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
-        WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARYB")/..'#g')")
+        WRITE_DIR=$(dirname "$(grep "^write-data=" "$FCONF" |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'"$(dirname ${BINARYB})"/..'#g')")
       fi
       debug "write path: $WRITE_DIR"
     
@@ -233,10 +234,10 @@ Available commands:
 }
 
 as_user() {
-  if [ $ME == $USERNAME ]; then # Are we the factorio user?
+  if [ "$ME" == "$USERNAME" ]; then # Are we the factorio user?
     bash -c "$1"
   elif [ "$(id -u)" == "0" ]; then # Are we root?
-    su $USERNAME -s /bin/bash -c "$1"
+    su "$USERNAME" -s /bin/bash -c "$1"
   else
     # To prevent odd permission behaviour, either
     # run this script as the configured user or as root
@@ -247,14 +248,14 @@ as_user() {
 }
 
 is_running() {
-  if [ -e ${PIDFILE} ]; then
-    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
-      debug "${SERVICE_NAME} is running with pid $(cat ${PIDFILE})"
+  if [ -e "${PIDFILE}" ]; then
+    if kill -0 "$(cat "${PIDFILE}")" 2> /dev/null; then
+      debug "${SERVICE_NAME} is running with pid $(cat "${PIDFILE}")"
       return 0
     else
       debug "Found ${PIDFILE}, but the server is not running. It's possible that your server has crashed"
       debug "Check the log for details"
-      rm ${PIDFILE} 2> /dev/null
+      rm "${PIDFILE}" 2> /dev/null
       return 2
     fi
   fi
@@ -283,7 +284,7 @@ start_service() {
   fi
 
   # ensure we have a fifo
-  if ! [ -p ${FIFO} ]; then
+  if ! [ -p "${FIFO}" ]; then
     if ! as_user "mkfifo ${FIFO}"; then
       echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
       return 1
@@ -292,13 +293,13 @@ start_service() {
 
   if [ ${SAVELOG} -eq 0 ]; then
     debug "Erasing log ${CMDOUT}"
-    echo "" > ${CMDOUT}
+    echo "" > "${CMDOUT}"
   fi
 
   if ! [ -e ${ADMINLIST} ]; then
     debug "${ADMINLIST} does not exist!  Creating empty file."
     echo "[]" > ${ADMINLIST}
-    chown ${USERNAME}:${USERGROUP} ${ADMINLIST}
+    chown "${USERNAME}:${USERGROUP}" ${ADMINLIST}
   fi
 
   if [ ${WAIT_PINGPONG} -gt 0 ]; then
@@ -307,24 +308,23 @@ start_service() {
 
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
-  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-  if [ $? -gt 0 ]; then
+  if ps -p "$(cat "${PIDFILE}")" > /dev/null 2>&1; then
+    echo "Started ${SERVICE_NAME}, please see log for details"
+  else
     as_user "cat ${CMDOUT} |grep -v -P '^$'"
     echo -e "\nUnable to start ${SERVICE_NAME}"
     return 1
-  else
-    echo "Started ${SERVICE_NAME}, please see log for details"
   fi
 }
 
 stop_service() {
-  if [ -e ${PIDFILE} ]; then
+  if [ -e "${PIDFILE}" ]; then
     echo -n "Stopping ${SERVICE_NAME}: "
-    if kill -TERM $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+    if kill -TERM "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
       sec=1
       while [ "$sec" -le 15 ]; do
-        if [ -e ${PIDFILE} ]; then
-          if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+        if [ -e "${PIDFILE}" ]; then
+          if kill -0 "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
             echo -n ". "
             sleep 1
           else
@@ -333,27 +333,27 @@ stop_service() {
         else
           break
         fi
-        sec=$(($sec+1))
+        sec=$((sec+1))
       done
     fi
 
-    if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+    if kill -0 "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
       echo "Unable to shut down nicely, killing the process!"
-      kill -KILL $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null
+      kill -KILL "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null
     else
       echo "complete!"
     fi
 
     # Start the reader (in case tail stopped already)
-    cat ${FIFO} &
+    cat "${FIFO}" &
     # Open pipe for writing.
-    exec 3> ${FIFO}
+    exec 3> "${FIFO}"
     # Write a newline to the pipe, this triggers a SIGPIPE and causes tail to exit
     echo "" >&3
     # Close pipe.
     exec 3>&-
 
-    rm ${PIDFILE} 2> /dev/null
+    rm "${PIDFILE}" 2> /dev/null
     return 0 # we've either shut down gracefully or killed the process
   else
     echo "${SERVICE_NAME} is not running (${PIDFILE} does not exist)"
@@ -368,23 +368,23 @@ send_cmd(){
     shift
   fi
   if is_running; then
-    if [ -p ${FIFO} ]; then
+    if [ -p "${FIFO}" ]; then
       # Generate two unique log markers
       TIMESTAMP=$(date +"%s")
       START="FACTORIO_INIT_CMD_${TIMESTAMP}_START"
       END="FACTORIO_INIT_CMD_${TIMESTAMP}_END"
 
       # Whisper that unknown player to place start marker in log
-      echo "/w $START" > ${FIFO}
+      echo "/w $START" > "${FIFO}"
       # Run the actual command
-      echo $@ > ${FIFO}
+      echo "$*" > "${FIFO}"
       # Whisper that unknown player again to place end marker in log after the command terminated
-      echo "/w $END" > ${FIFO}
+      echo "/w $END" > "${FIFO}"
 
       if [ ${NEED_OUTPUT} -eq 1 ]; then
         # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
         sleep 1
-        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < ${CMDOUT}
+        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < "${CMDOUT}"
       fi
     else
       echo "${FIFO} is not a pipe!"
@@ -404,7 +404,7 @@ cmd_players(){
   fi
 
   if [ "$1" == "online" ]; then
-    echo "${players}" |egrep '.+ \(online\)$' |sed -e 's/ (online)//g'
+    echo "${players}" |grep -E '.+ \(online\)$' |sed -e 's/ (online)//g'
   else
     echo "${players}"
   fi
@@ -434,7 +434,7 @@ test_deps(){
 install(){
   # Prevent accidential overwrites
   if [ -e "${FACTORIO_PATH}" ]; then
-    if ! [ -z "`ls -A ${FACTORIO_PATH} 2>&1`" ]; then
+    if [ -n "$(ls -A ${FACTORIO_PATH} 2>&1)" ]; then
       error "Aborting install, '${FACTORIO_PATH}' is not empty!"
       return 1
     fi
@@ -457,13 +457,12 @@ install(){
   if [ "${downloadlatest}" = 1 ]; then
     # fetch a http HEAD response, we need it to know what to download later
     debug "Checking for latest headless version."
-    httpresponse=`curl -LIs "${LATEST_HEADLESS_URL}" 2>&1`
-    if [ $? -gt 0 ]; then
+    if ! httpresponse="$(curl -LIs "${LATEST_HEADLESS_URL}" 2>&1)"; then
       info "${httpresponse}"
       error "Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
       return 1
     else
-      httpstatus=`echo "${httpresponse}" |grep HTTP |tail -n -1 |grep -oP '(?<= )\d{3}(?= )'`
+      httpstatus="$(echo "${httpresponse}" |grep HTTP |tail -n -1 |grep -oP '(?<= )\d{3}(?= )')"
       if ! [ "${httpstatus}" = "200" ]; then
         info "${httpresponse}"
         error "Aborting install, expected HTTP 200 from '${LATEST_HEADLESS_URL}', got '${httpstatus}'."
@@ -472,10 +471,8 @@ install(){
     fi
     
     # parse the response
-    
-
-    filename=`echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1`
-    location=`echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1`
+    filename="$(echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1)"
+    #location=$(echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1)
     debug "Found, latest version: '${filename}'"
 
     if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
@@ -486,7 +483,7 @@ install(){
           return 1
         fi
       fi
-      if ! as_user "test -w \"${INSTALL_CACHE_DIR}\"" ]; then
+      if ! as_user "test -w \"${INSTALL_CACHE_DIR}\""; then
         error "Aborting install, unable to write to cache '${INSTALL_CACHE_DIR}'."
         return 1
       fi
@@ -526,10 +523,8 @@ install(){
   fi
 
   # Generate default config & create a default save-game to play on
-  as_user "\"${BINARY}\" --create \"${target}/saves/server-save\" ${EXE_ARGS_GLIBC}"
-  if [ $? -eq 0 ]; then
-    as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""
-    if [ $? -gt 0 ]; then
+  if as_user "\"${BINARY}\" --create \"${target}/saves/server-save\" ${EXE_ARGS_GLIBC}"; then
+    if ! as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""; then
       error "WARNING! Unable to copy server settings, may need to be resolved manually."
     fi
     info "Installation complete, edit '${target}/data/server-settings.json' and start your server."
@@ -541,11 +536,11 @@ install(){
 }
 
 get_bin_version(){
-  echo `as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"`
+  as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"
 }
 
 get_bin_arch(){
-  echo `as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"`
+  as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"
 }
 
 update(){
@@ -556,7 +551,7 @@ update(){
   fi
 
   # Assume the user wants a dry run? (our only argument to this function)
-  if ! [ -z "$1" ]; then
+  if [ -n "$1" ]; then
     echo "Running updater in --dry-run mode, no patches will be applied"
     dryrun=1
   else
@@ -564,12 +559,12 @@ update(){
   fi
 
   if [ ${HEADLESS} -gt 0 ]; then
-    package="core-linux_headless`get_bin_arch`"
+    package="core-linux_headless$(get_bin_arch)"
   else
-    package="core-linux`get_bin_arch`"
+    package="core-linux$(get_bin_arch)"
   fi
 
-  version=`get_bin_version`
+  version=$(get_bin_version)
   if [ -z "${UPDATE_TMPDIR}" ]; then
     UPDATE_TMPDIR=/tmp
   fi
@@ -591,19 +586,18 @@ update(){
   else
     # Create tmpdir and ensure automatic cleanup
     debug "Creating update tmpdir: ${tmpdir}"
-    tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
-    if [ $? -ne 0 ]; then
+    if ! tmpdir=$(as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"); then
       echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
       return 1
     fi
-    trap "rm -rf ${tmpdir}" EXIT
+    trap 'rm -rf "${tmpdir}"' EXIT
   fi
     
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
   fi
-  if [ ${DEBUG} -gt 0 ]; then
+  if [ "${DEBUG}" -gt 0 ]; then
     invocation="${invocation} --verbose"
   fi
 
@@ -614,15 +608,15 @@ update(){
   fi
 
   echo "Checking for updates..."
-  result=`as_user "${invocation} --dry-run"`
+  result=$(as_user "${invocation} --dry-run")
   exitcode=$?
-  if [ ${exitcode} -eq 1 -o ${exitcode} -gt 2 ]; then
+  if [ ${exitcode} -eq 1 ] || [ ${exitcode} -gt 2 ]; then
     debug "Invocation: ${invocation}"
     debug "${result}"
     echo "Update check failed!"
     return 1
   else
-    newversion=`echo "${result}" |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
+    newversion=$(echo "${result}" |grep -E '^Dry run: ' |grep -E -o '[0-9\.]+' |tail -n 1)
   fi
 
   if [ -z "${newversion}" ]; then
@@ -636,7 +630,7 @@ update(){
   if [ ${dryrun} -gt 0 ]; then
     debug "This is a dry-run, not taking any further actions."
     # allow scripts to read return code 0 for no updates and 2 if there are updates to apply
-    if ! [ -z "${newversion}" ]; then
+    if [ -n "${newversion}" ]; then
       return 2
     fi
     return 0
@@ -673,9 +667,9 @@ update(){
     fi
   fi
 
-  for patch in $(find ${tmpdir} -type f -name "*.zip" | sort -V); do
+  for patch in $(find "${tmpdir}" -type f -name "*.zip" | sort -V); do
     echo "Applying ${patch} ..."
-    result=`as_user "$BINARY --apply-update ${patch} ${EXE_ARGS_GLIBC}"`
+    result=$(as_user "$BINARY --apply-update ${patch} ${EXE_ARGS_GLIBC}")
     exitcode=$?
     if [ $exitcode -gt 0 ]; then
       echo "${result}"
@@ -708,7 +702,7 @@ run_main(){
       debug "Skip loading config for command '${command}'"
       ;;
     *)
-      load_config "${config_file}" $@ || return $?
+      load_config "${config_file}" "$*" || return $?
       ;;
   esac
   
@@ -776,10 +770,10 @@ run_main(){
         echo ""
 
         while true; do
-          read -e -p "server@${SERVICE_NAME}> " cmd
+          read -r -e -p "server@${SERVICE_NAME}> " cmd
           [ "${cmd}" == "exit" ] && return 0
           [ "${cmd}" == "clear" ] && clear && continue
-          echo ${cmd} > ${FIFO}
+          echo "${cmd}" > "${FIFO}"
           sleep 1
         done
       else
@@ -789,10 +783,10 @@ run_main(){
     chatlog)
       case $2 in
         --tail|-t)
-          tail -F -n +0 ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
+          tail -F -n +0 "${CMDOUT}" |grep -E -v "${NONCMDPATTERN}"
           ;;
         *)
-          cat ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
+          grep -E -v "${NONCMDPATTERN}" "${CMDOUT}"
           ;;
       esac
       ;;
@@ -803,7 +797,7 @@ run_main(){
       cmd_players online
       ;;
     new-game)
-      if [ -z $2 ]; then
+      if [ -z "$2" ]; then
         echo "You must specify a save name for your new game"
         return 1
       fi
@@ -811,7 +805,7 @@ run_main(){
       createsavecmd="$BINARY --create \"${savename}\""
 
       # Check if user wants to use custom map-gen-settings
-      if [ $3 ]; then
+      if [ -n "$3" ]; then
         if [ -e "${WRITE_DIR}/data/$3" ]; then
           createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/data/$3"
         else
@@ -821,7 +815,7 @@ run_main(){
       fi
 
       # Check if user wants to use custom map-settings
-      if [ $4 ]; then
+      if [ -n "$4" ]; then
         if [ -e "${WRITE_DIR}/data/$4" ]; then
           createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/data/$4"
         else
@@ -886,7 +880,7 @@ run_main(){
       return $?
       ;;
     inv|invocation)
-      echo ${INVOCATION}
+      echo "${INVOCATION}"
       ;;
     help)
       usage
@@ -895,10 +889,10 @@ run_main(){
       usage |grep -oP '(?<=  )\w+'
       ;;
     listsaves)
-      find ${WRITE_DIR}/saves -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
+      find "${WRITE_DIR}"/saves -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
       ;;
     version)
-      echo `get_bin_version`
+      get_bin_version
       ;;
     *)
       echo "No such command!"
@@ -909,13 +903,15 @@ run_main(){
   esac
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  if [ -L ${0} ]; then
-    config_file=`readlink -e ${0} | sed "s:[^/]*$:config:"`
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  if [ -L "${0}" ]; then
+    config_file=$(readlink -e "$0" | sed "s:[^/]*$:config:")
   else
-    config_file=`echo ${0} | sed "s:[^/]*$:config:"`
+    # shellcheck disable=SC2001
+    config_file=$(echo "$0" | sed "s:[^/]*$:config:")
   fi
 
-  run_main $config_file $@
+  run_main "$config_file" "$@"
   exit $?
 fi
+
