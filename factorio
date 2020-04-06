@@ -486,7 +486,7 @@ update(){
         exit 1
       fi
     fi
-    if ! as_user "test -w ${tmpdir}" ]; then
+    if ! as_user "test -w ${tmpdir}"; then
       echo "Aborting update! Unable to write to tmpdir: ${tmpdir}"
       exit 1
     fi
