@@ -85,17 +85,17 @@ case "$1" in
       echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
       exit 1
     fi
-  
+
     if [ -z ${FCONF} ]; then
       FCONF="${FACTORIO_PATH}/config/config.ini"
     fi
-  
+
     if ! [ -e "${SERVER_SETTINGS}" ]; then
       echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
       echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
       exit 1
     fi
-  
+
     if ! [ -e ${FCONF} ]; then
       echo "Could not find factorio config file: ${FCONF}"
       echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
@@ -116,26 +116,26 @@ case "$1" in
       WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARYB")/..'#g')")
     fi
     debug "write path: $WRITE_DIR"
-  
+
     PIDFILE="${WRITE_DIR}/server.pid"
-  
+
     if [ -z "${FIFO}" ];then
       FIFO="${WRITE_DIR}/server.fifo"
     fi
-  
+
     if [ -z "${CMDOUT}" ];then
       CMDOUT="${WRITE_DIR}/server.out"
     fi
-  
+
     if [ -z "${SAVELOG}" ]; then
       SAVELOG=0
     fi
-  
+
     # Finally, set up the invocation
     INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} ${EXTRA_BINARGS}"
     ;;
 esac
-  
+
 usage(){
   echo "Usage: $0 COMMAND"
   echo
@@ -500,7 +500,7 @@ update(){
     fi
     trap "rm -rf ${tmpdir}" EXIT
   fi
-    
+
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
@@ -586,7 +586,7 @@ update(){
       exit 1
     fi
   done
-  
+
   # Restarts the server if it was running
   if [ ${was_running} -eq 0 ]; then
     start_service
