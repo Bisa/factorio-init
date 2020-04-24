@@ -119,11 +119,11 @@ case "$1" in
 
     PIDFILE="${WRITE_DIR}/server.pid"
 
-    if [ -z "${FIFO}" ];then
+    if [ -z "${FIFO}" ]; then
       FIFO="${WRITE_DIR}/server.fifo"
     fi
 
-    if [ -z "${CMDOUT}" ];then
+    if [ -z "${CMDOUT}" ]; then
       CMDOUT="${WRITE_DIR}/server.out"
     fi
 
