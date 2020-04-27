@@ -199,6 +199,11 @@ config_defaults() {
 
       # Finally, set up the invocation
       INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} ${EXTRA_BINARGS}"
+          if [ -n "${WHITELIST}" ] && [ -e "${WHITELIST}" ]; then
+      INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} --server-whitelist ${WHITELIST} --use-server-whitelist ${EXTRA_BINARGS}"
+    else
+      INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} ${EXTRA_BINARGS}"
+    fi
       ;;
   esac
 
@@ -592,7 +597,7 @@ update(){
     fi
     trap 'rm -rf "${tmpdir}"' EXIT
   fi
-    
+
   invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
@@ -682,7 +687,7 @@ update(){
       return 1
     fi
   done
-  
+
   # Restarts the server if it was running
   if [ ${was_running} -eq 0 ]; then
     start_service
