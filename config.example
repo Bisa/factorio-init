@@ -34,6 +34,10 @@ SERVER_SETTINGS=${FACTORIO_PATH}/data/server-settings.json
 # If the file does not exist in ${FACTORIO_PATH}/data, a blank copy will be created.
 ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
 
+# The whitelist file is in the same format as the admin list file.
+# If the file does not exist in ${FACTORIO_PATH}/data, it will not be used.
+WHITELIST=${FACTORIO_PATH}/data/server-whitelist.json
+
 # Port on which you want to run the server
 PORT=34197
 
