@@ -93,7 +93,7 @@ Note that systemd won't be able to keep track of the server process if you use t
 
 # Thank You
 - To all who find this script useful in one way or the other
-- A big thank you to [Wube](https://www.factorio.com/team) for making [Factorio](https://www.factorio.com/)
+- A big thank you to [Wube](https://www.factorio.com/game/about) for making [Factorio](https://www.factorio.com/)
 - A special thanks to NoPantsMcDance, Oxyd, HanziQ, TheFactorioCube and all other frequent users of the [#factorio](irc://irc.esper.net/#factorio) channel @ esper.net
 - Thank you to Salzig for pointing me in the right direction when it comes to input redirection
 - At last, but not least; Thank you to all [contributors](https://github.com/Bisa/factorio-init/graphs/contributors) and users posting [issues](https://github.com/Bisa/factorio-init/issues) in my [github](https://github.com/Bisa/factorio-init/) project or on the [factorio forums](https://forums.factorio.com/viewtopic.php?f=133&t=13874)
