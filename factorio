@@ -505,7 +505,7 @@ update(){
     trap "rm -rf ${tmpdir}" EXIT
   fi
 
-  invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
+  invocation="python3 ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
   fi
