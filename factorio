@@ -132,11 +132,14 @@ case "$1" in
     fi
 
     # Finally, set up the invocation
+    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST}"
     if [ ! -z "${WHITELIST}" ] && [ -e "${WHITELIST}" ]; then
-      INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} --server-whitelist ${WHITELIST} --use-server-whitelist ${EXTRA_BINARGS}"
-    else
-      INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST} ${EXTRA_BINARGS}"
+      INVOCATION+=" --server-whitelist ${WHITELIST} --use-server-whitelist"
     fi
+    if [ ! -z "${BANLIST}" ] && [ -e "${BANLIST}" ]; then
+      INVOCATION+=" --server-banlist ${BANLIST}"
+    fi
+    INVOCATION+=" ${EXTRA_BINARGS}"
     ;;
 esac
 

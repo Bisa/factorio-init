@@ -38,6 +38,10 @@ ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
 # If the file does not exist in ${FACTORIO_PATH}/data, it will not be used.
 WHITELIST=${FACTORIO_PATH}/data/server-whitelist.json
 
+# The banlist file is in the same format as the admin list file.
+# If the file does not exist in ${FACTORIO_PATH}/data, it will not be used.
+BANLIST=${FACTORIO_PATH}/data/server-banlist.json
+
 # Port on which you want to run the server
 PORT=34197
 
