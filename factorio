@@ -164,6 +164,7 @@ usage(){
   echo -e "   listcommands \t\t\t List all init-commands"
   echo -e "   listsaves \t\t\t\t List all saves"
   echo -e "   version \t\t\t\t Prints the binary version"
+  echo -e "   mod \t\t\t\t\t Manage mods (see $0 mod help for more information)"
   echo -e "   help \t\t\t\t Shows this help message"
 }
 
@@ -602,6 +603,76 @@ update(){
   echo "Successfully updated factorio"
 }
 
+mod() {
+  mod_usage() {
+    cat <<EOH
+Usage:
+  mod update                                  Updates all installed mods
+  mod (install|remove|enable|disable) MOD...  Install, remove, enable or disable all MODs
+  mod list                                    List all installed mods, along with their status
+Flags:
+  --dry-run, -n       Don't change anything, just print actions
+  --verbose, -v       Be verbose
+EOH
+  }
+  if ! [ -e "${MOD_SCRIPT}" ]; then
+    echo "Failed to find mod script, blatantly refusing to continue!"
+    echo "Try cloning into https://github.com/Tantrisse/Factorio-mods-manager.git and set the MOD_SCRIPT config before you try again."
+    exit 1
+  fi
+  mod_script="python3 ${MOD_SCRIPT} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN}"
+  cmd="$1"
+  shift
+  declare -a args
+  for arg in "$@"; do
+    case "$arg" in
+      "--dry-run"|"-n") mod_script="$mod_script --dry-run" ;;
+      "--verbose"|"-v") mod_script="$mod_script --verbose" ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  case "$cmd" in
+    update)
+      $mod_script --update
+      ;;
+    install)
+      for mod in "${args[@]}"; do
+        mod_script="$mod_script --install $mod"
+      done
+      $mod_script
+      ;;
+    enable)
+      for mod in "${args[@]}"; do
+          mod_script="$mod_script --enable $mod"
+      done
+      $mod_script
+      ;;
+    disable)
+      for mod in "${args[@]}"; do
+          mod_script="$mod_script --disable $mod"
+      done
+      $mod_script
+      ;;
+    remove)
+      for mod in "${args[@]}"; do
+        mod_script="$mod_script --remove $mod"
+      done
+      $mod_script
+      ;;
+    list)
+      $mod_script --list
+      ;;
+    help)
+      mod_usage
+      ;;
+    *)
+      echo "Unknown command: $cmd"
+      mod_usage
+      return 1
+      ;;
+  esac
+}
+
 case "$1" in
   start)
     # Starts the server
@@ -808,6 +879,10 @@ case "$1" in
   source)
     # do not call `exit` and just return successfully, so that other scripts (possibly with set -e) may source this script to import all out variables and functions
     return 0
+    ;;
+  mod)
+    shift
+    mod "$@"
     ;;
   *)
     echo "No such command!"
