@@ -223,6 +223,7 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     
     source $factorio_script
     load_config ./config.example
+    FACTORIO_PATH="`create_tmp_empty_dir`"
     
     nofile="`create_nonexisting_file tarball`"
     run install "${nofile}"
