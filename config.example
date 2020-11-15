@@ -36,6 +36,10 @@ ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
 # If the file does not exist in ${FACTORIO_PATH}/data, it will not be used.
 WHITELIST=${FACTORIO_PATH}/data/server-whitelist.json
 
+# The banlist file is in the same format as the admin list file.
+# If the file does not exist in ${FACTORIO_PATH}/data, it will not be used.
+BANLIST=${FACTORIO_PATH}/data/server-banlist.json
+
 # Port on which you want to run the server
 PORT=34197
 
@@ -81,6 +85,17 @@ UPDATE_PERSIST_TMPDIR=0
 #   (note! This also means that you will be prevented from applying updates with the
 #   script if the server is running)
 UPDATE_PREVENT_RESTART=0
+
+#
+# There is also integration with Tantrisse's Factorio-mods-manager
+# Uses UPDATE_USERNAME and UPDATE_TOKEN for mod management
+# Access is exposed under the mod subcommand
+# To install:
+# git clone https://github.com/Tantrisse/Factorio-mods-manager.git
+#
+
+# absolute path to the Factorio-mods-manager script
+MOD_SCRIPT=/path/to/mods_manager.py
 
 # Extras
 # Additional binary arguments, these will be sent to the binary when issuing the "start" command
