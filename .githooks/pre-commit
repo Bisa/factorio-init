@@ -2,6 +2,11 @@
 
 # git config --local core.hooksPath .githooks
 
+# ensure we only test what is to be commited
+echo "Stashing to ensure we do not test non-commit stuff..."
+STASH_NAME="pre-commit-hook-$(date +%s)"
+git stash save --keep-index $STASH_NAME || exit 1
+
 # find out where this repo is situated
 root_dir="$(git rev-parse --show-toplevel)"
 
@@ -21,5 +26,12 @@ docker build --target no-test-resources --tag "$sans_resources" "${root_dir}" &&
 # run tests on docker
 docker run -t --rm -v "$root_dir:/opt/factorio-init" "$sans_resources" --jobs 10 test &&
 docker run -t --rm -v "$root_dir:/opt/factorio-init" "$with_resources" --jobs 10 test
+test_return=$?
 
-exit $?
+echo "Restoring stash..."
+STASHES=$(git stash list)
+if [[ $STASHES == "$STASH_NAME" ]]; then
+  git stash pop
+fi
+
+exit $test_return
