@@ -199,10 +199,10 @@ config_defaults() {
 
       # Finally, set up the invocation
       INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST}"
-      if [ ! -z "${WHITELIST}" ] && [ -e "${WHITELIST}" ]; then
+      if [ -n "${WHITELIST}" ] && [ -e "${WHITELIST}" ]; then
         INVOCATION+=" --server-whitelist ${WHITELIST} --use-server-whitelist"
       fi
-      if [ ! -z "${BANLIST}" ] && [ -e "${BANLIST}" ]; then
+      if [ -n "${BANLIST}" ] && [ -e "${BANLIST}" ]; then
         INVOCATION+=" --server-banlist ${BANLIST}"
       fi
       INVOCATION+=" ${EXTRA_BINARGS}"
@@ -712,12 +712,12 @@ Flags:
   --verbose, -v       Be verbose
 EOH
   }
-  if ! [ -e "${MOD_SCRIPT}" ]; then
+  if ! [ -e "${MOD_SCRIPT_DIR}" ]; then
     echo "Failed to find mod script, blatantly refusing to continue!"
-    echo "Try cloning into https://github.com/Tantrisse/Factorio-mods-manager.git and set the MOD_SCRIPT config before you try again."
+    echo "Try cloning into https://github.com/Tantrisse/Factorio-mods-manager.git and set the MOD_SCRIPT_DIR config before you try again."
     exit 1
   fi
-  mod_script="python3 ${MOD_SCRIPT} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN}"
+  mod_script="python3 ${MOD_SCRIPT_DIR} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN}"
   cmd="$1"
   shift
   declare -a args
