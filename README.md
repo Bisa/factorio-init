@@ -96,20 +96,49 @@ service factorio help
 # Do not forget to enable the service at boot if you want that.
 ```
 
-## Tests
+## Contributing
+
+When contributing to this repo, please ensure your contribution is covered by at least one test in ```test/factorio.bats``` or the very least: do not create pull requests with failing tests, thank you.
+
+### Test the code
 
 Testing is done using [bats-core](https://github.com/bats-core/bats-core), [bats-assert](https://github.com/ztombol/bats-assert) and [bats-support](https://github.com/ztombol/bats-support).
 
-### Run tests with Docker
+- Write a test case, example:
 
-- First init and update the submodules (if you did not already)
+```bash
+@test "DEBUG=1 produces output" {
+    # To access functions within ./factorio, source it then use the run command:
+    source ./factorio
+    export DEBUG=1
+    run debug "TEST"
+    # use the various asserts from bats-assert
+    assert_output "DEBUG: TEST"
+}
+```
+
+- init and update the submodules (if you did not already)
 
 ```bash
 git submodule init
 git submodule update
 ```
 
-- Then build the docker image (a modified ubuntu:latest by default)
+- Then run the tests, see the following sections:
+
+#### With .githooks
+
+- Set the hooks path to our .githooks directory
+
+```bash
+git config --local core.hooksPath .githooks
+```
+
+The ```.githooks/pre-commit``` will run shellcheck, local tests as well as docker tests with and without resources.
+
+#### With Docker
+
+- Build the docker image (a slightly modified ubuntu by default)
 
 ```bash
 docker build --build-arg factorio_version=1.0.0 --tag finit:latest .
@@ -123,41 +152,17 @@ Adding ```--target no-test-resources``` to the build command will avoid download
 docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest test
 ```
 
-### Run tests manually
+#### Manually
 
-Please note that some tests will be skipped unless you run them with the docker image, running them manually and getting them to work requires more set-up but is a quick way to get started.
+Please note that some tests will be skipped unless you run them with the docker image or via .githooks, but running them manually is a quick way to get started.
 
-- First init and update the submodules (if you did not already)
-
-```bash
-git submodule init
-git submodule update
-```
-
-- Then run the tests
+- run the tests
 
 ```bash
 ./tests/libs/bats-core/bin/bats test
 ```
 
 Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.
-
-### Writing tests
-
-When contributing to this repo, please ensure your contribution is covered by at least one test in ```test/factorio.bats``` - and do not create pull requests with failing tests thank you ;)
-
-Example:
-
-```bash
-@test "DEBUG=1 produces output" {
-    # To access functions within ./factorio, source it then use the run command:
-    source ./factorio
-    export DEBUG=1
-    run debug "TEST"
-    # use the various asserts from bats-assert
-    assert_output "DEBUG: TEST"
-}
-```
 
 ## Thank You
 
