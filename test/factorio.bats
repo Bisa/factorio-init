@@ -267,7 +267,7 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     FACTORIO_PATH="`create_tmp_empty_dir`"
     BINARY="${FACTORIO_PATH}/bin/x64/factorio"
     DEBUG=1
-    tarball="/tmp/factorio_headless_x64_0.17.79.tar.xz"
+    tarball="/tmp/factorio_headless_x64_1.0.0.tar.xz"
 
     run install "${tarball}"
     

@@ -112,7 +112,7 @@ git submodule update
 - Then build the docker image (a modified ubuntu:latest by default)
 
 ```bash
-docker build --tag finit:latest .
+docker build --build-arg factorio_version=1.0.0 --tag finit:latest .
 ```
 
 Adding ```--target no-test-resources``` to the build command will avoid downloading test resources online but it will also skip tests that rely on the resources(!)
