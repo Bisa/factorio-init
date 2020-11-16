@@ -123,8 +123,6 @@ Adding ```--target no-test-resources``` to the build command will avoid download
 docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest test
 ```
 
-Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.
-
 ### Run tests manually
 
 Please note that some tests will be skipped unless you run them with the docker image, running them manually and getting them to work requires more set-up but is a quick way to get started.
@@ -141,6 +139,8 @@ git submodule update
 ```bash
 ./tests/libs/bats-core/bin/bats test
 ```
+
+Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.
 
 ### Writing tests
 

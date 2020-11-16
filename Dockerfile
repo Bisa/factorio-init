@@ -14,9 +14,6 @@ RUN addgroup --system $factorio_group
 RUN adduser --system --ingroup $factorio_group $factorio_user
 
 USER $factorio_user
-RUN mkdir /home/$factorio_user/.parallel
-RUN touch /home/$factorio_user/.parallel/will-cite
-
 WORKDIR /opt/factorio-init
 ENTRYPOINT ["bash", "/opt/factorio-init/test/libs/bats-core/bin/bats"]
 
