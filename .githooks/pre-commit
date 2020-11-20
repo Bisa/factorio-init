@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# git config --local core.hooksPath .githooks
+set -o pipefail
+set -u
 
-# ensure we only test what is to be commited
-echo "Stashing to ensure we do not test non-commit stuff..."
-STASH_NAME="pre-commit-hook-$(date +%s)"
-git stash save --keep-index $STASH_NAME || exit 1
+STASH_SIZE="$(git stash list |wc -l)" # remember how big the stash is before we try to stash
+git stash push --keep-index --include-untracked --message "pre-commit-hook-$(date +%s)" || exit 1
 
 # find out where this repo is situated
 root_dir="$(git rev-parse --show-toplevel)"
@@ -19,7 +18,7 @@ sans_resources="${image_id}:${base_tag}-sans-resources"
 # do shellcheck on factorio script
 docker run --rm -v "$root_dir:/mnt" koalaman/shellcheck:stable factorio &&
 # run local tests
-"${root_dir}/test/libs/bats-core/bin/bats" "${root_dir}/test" --jobs 10 &&
+"${root_dir}/test/libs/bats-core/bin/bats" "${root_dir}/test" &&
 # build docker images
 docker build --tag "$with_resources" "${root_dir}" &&
 docker build --target no-test-resources --tag "$sans_resources" "${root_dir}" &&
@@ -28,10 +27,9 @@ docker run -t --rm -v "$root_dir:/opt/factorio-init" "$sans_resources" --jobs 10
 docker run -t --rm -v "$root_dir:/opt/factorio-init" "$with_resources" --jobs 10 test
 test_return=$?
 
-echo "Restoring stash..."
-STASHES=$(git stash list)
-if [[ $STASHES == "$STASH_NAME" ]]; then
-  git stash pop
+if [ $STASH_SIZE -lt $(git stash list |wc -l) ]; then
+    # we added stuff earlier, let us restore it now
+    git stash pop || exit 1
 fi
 
 exit $test_return
