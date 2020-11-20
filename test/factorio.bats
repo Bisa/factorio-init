@@ -51,6 +51,7 @@ factorio_script=./factorio
 }
 
 @test ".load_config fails on non-readable config file" {
+	[ $(id -u) -eq 0 ] && skip "We are running as root, we can not test non-readability"
     config_file="${BATS_TMPDIR}/non-readable"
     touch "${config_file}"
     chmod a-r "${config_file}"
@@ -157,6 +158,7 @@ factorio_script=./factorio
 }
 
 @test ".install fails when FACTORIO_PATH is not writable" {
+	[ $(id -u) -eq 0 ] && skip "We are running as root, we can not test non-writeability"
     load 'tmp-helper'
     load 'http-mock-helper'
     mock_curl_fail
