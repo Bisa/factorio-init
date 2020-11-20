@@ -314,6 +314,5 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     #help|--help|-h)
     #listcommands)
     #listsaves)
-    #source)
     #mod)
     #version)
