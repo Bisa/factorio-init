@@ -15,7 +15,7 @@ RUN adduser --system --ingroup $factorio_group $factorio_user
 
 USER $factorio_user
 WORKDIR /opt/factorio-init
-ENTRYPOINT ["bash", "/opt/factorio-init/test/libs/bats-core/bin/bats"]
+ENTRYPOINT ["bash", "/opt/factorio-init/extras/test/libs/bats-core/bin/bats"]
 
 ### Build onto the base, add test resources:
 FROM no-test-resources AS with-test-resources

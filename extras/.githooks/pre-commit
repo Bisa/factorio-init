@@ -18,13 +18,13 @@ sans_resources="${image_id}:${base_tag}-sans-resources"
 # do shellcheck on factorio script
 docker run --rm -v "$root_dir:/mnt" koalaman/shellcheck:stable factorio &&
 # run local tests
-"${root_dir}/test/libs/bats-core/bin/bats" "${root_dir}/test" &&
+"${root_dir}/extras/test/libs/bats-core/bin/bats" "${root_dir}/extras/test" &&
 # build docker images
-docker build --tag "$with_resources" "${root_dir}" &&
-docker build --target no-test-resources --tag "$sans_resources" "${root_dir}" &&
+docker build --tag "$with_resources" - < "${root_dir}"/extras/Dockerfile &&
+docker build --target no-test-resources --tag "$sans_resources" - < "${root_dir}"/extras/Dockerfile &&
 # run tests on docker
-docker run -t --rm -v "$root_dir:/opt/factorio-init" "$sans_resources" --jobs 10 test &&
-docker run -t --rm -v "$root_dir:/opt/factorio-init" "$with_resources" --jobs 10 test
+docker run -t --rm -v "$root_dir:/opt/factorio-init" "$sans_resources" --jobs 10 extras/test &&
+docker run -t --rm -v "$root_dir:/opt/factorio-init" "$with_resources" --jobs 10 extras/test
 test_return=$?
 
 if [ $STASH_SIZE -lt $(git stash list |wc -l) ]; then

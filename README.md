@@ -27,7 +27,9 @@ If you find yourself wondering why stuff is not working the way you expect:
  git clone https://github.com/Bisa/factorio-init.git
  ```
 
-- Rename config.example to config and modify the values within according to your setup.
+- Rename or copy `config.example` to `config` and modify the values within according to your setup.
+
+- Unless you need files from the `extras` dir (check the below sections) you can safely remove it.
 
 ### Notes for users with an OS that has a older glibc version
 
@@ -52,9 +54,9 @@ The config has options for declaring an alternate glibc root. The user millisa o
 
 ```bash
 # either symlink:
-ln -s /opt/factorio-init/bash_autocomplete /etc/bash_completion.d/factorio
+ln -s /opt/factorio-init/extras/bash_autocomplete /etc/bash_completion.d/factorio
 # or source:
-echo "source /opt/factorio-init/bash_autocomplete" >> ~/.bashrc
+echo "source /opt/factorio-init/extras/bash_autocomplete" >> ~/.bashrc
 
 # then ensure factorio-init is added to your PATH, ie by:
 ln -s /opt/factorio-init/factorio /usr/local/bin/factorio
@@ -67,7 +69,7 @@ ln -s /opt/factorio-init/factorio /usr/local/bin/factorio
 - Copy the example service, adjust & reload
 
 ```bash
-cp /opt/factorio-init/factorio.service.example /etc/systemd/system/factorio.service
+cp /opt/factorio-init/extras/factorio.service.example /etc/systemd/system/factorio.service
 # Edit the service file to suit your environment then reload systemd
 systemctl daemon-reload
 ```
@@ -131,17 +133,17 @@ git submodule update
 - Set the hooks path to our .githooks directory
 
 ```bash
-git config --local core.hooksPath .githooks
+git config --local core.hooksPath extras/.githooks
 ```
 
-The ```.githooks/pre-commit``` will run shellcheck, local tests as well as docker tests with and without resources.
+The ```extras/.githooks/pre-commit``` will run shellcheck, local tests as well as docker tests with and without resources.
 
 #### With Docker
 
 - Build the docker image (a slightly modified ubuntu by default)
 
 ```bash
-docker build --build-arg factorio_version=1.0.0 --tag finit:latest .
+docker build --build-arg factorio_version=1.0.0 --tag finit:latest - < extras/Dockerfile
 ```
 
 Adding ```--target no-test-resources``` to the build command will avoid downloading test resources online but it will also skip tests that rely on the resources(!)
@@ -149,7 +151,7 @@ Adding ```--target no-test-resources``` to the build command will avoid download
 - Then run the image, mounting the current directory and removing the container once it's done
 
 ```bash
-docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest test
+docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest extras/test
 ```
 
 #### Manually
@@ -159,7 +161,7 @@ Please note that some tests will be skipped unless you run them with the docker 
 - run the tests
 
 ```bash
-./tests/libs/bats-core/bin/bats test
+./extras/test/libs/bats-core/bin/bats test
 ```
 
 Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.
