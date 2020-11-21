@@ -140,10 +140,15 @@ The ```extras/.githooks/pre-commit``` will run shellcheck, local tests as well a
 
 #### With Docker
 
-- Build the docker image (a slightly modified ubuntu by default)
+- Build the docker image(s) (a slightly modified ubuntu/centos)
 
 ```bash
-docker build --build-arg factorio_version=1.0.0 --tag finit:latest - < extras/Dockerfile
+docker build --build-arg ubuntu_version=20.04 \
+			 --build-arg factorio_version=1.0.0 \
+			 --tag ubuntu-finit:latest - < extras/docker/Dockerfile.ubuntu
+docker build --build-arg centos_version=centos8 \
+			 --build-arg factorio_version=1.0.0 \
+			 --tag centos-finit:latest - < extras/docker/Dockerfile.centos
 ```
 
 Adding ```--target no-test-resources``` to the build command will avoid downloading test resources online but it will also skip tests that rely on the resources(!)
@@ -151,7 +156,8 @@ Adding ```--target no-test-resources``` to the build command will avoid download
 - Then run the image, mounting the current directory and removing the container once it's done
 
 ```bash
-docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init finit:latest extras/test
+docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init ubuntu-finit:latest extras/test
+docker run -it --rm -v "$(pwd):/opt/factorio-init" --workdir /opt/factorio-init centos-finit:latest extras/test
 ```
 
 #### Manually

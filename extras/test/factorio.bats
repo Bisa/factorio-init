@@ -235,6 +235,7 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
 
 @test ".install uses cached tarball" {
     [ -z "${FACTORIO_INIT_WITH_TEST_RESOURCES}" ] && skip "We are not running tests with resources"
+
     load 'tmp-helper'
     load 'http-mock-helper'
     source $factorio_script
@@ -242,9 +243,14 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     mock_curl "${CURL_LATEST_STABLE_HEAD_302_200}" 0
     mock_wget_fail
     
-    load_config ./config.example
-    FACTORIO_PATH="`create_tmp_empty_dir`"
-    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+    config_file="${BATS_TMPDIR}/config"
+	cp ./config.example "${config_file}"
+	if [ -n "${FACTORIO_INIT_ALT_GLIBC}" ]; then
+		sed -i -e 's/ALT_GLIBC=0/ALT_GLIBC=1/' "${config_file}"
+	fi
+	sed -i -e 's#FACTORIO_PATH=/opt/factorio#FACTORIO_PATH="`create_tmp_empty_dir`"#' "${config_file}"
+	load_config "${config_file}"
+
     INSTALL_CACHE_TAR=1
     USERNAME=`whoami`
     USERGROUP=`whoami`
@@ -265,10 +271,15 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     mock_curl_fail
     mock_wget_fail
     
-    load_config ./config.example
-    FACTORIO_PATH="`create_tmp_empty_dir`"
-    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
-    DEBUG=1
+    config_file="${BATS_TMPDIR}/config"
+	cp ./config.example "${config_file}"
+	if [ -n "${FACTORIO_INIT_ALT_GLIBC}" ]; then
+		sed -i -e 's/ALT_GLIBC=0/ALT_GLIBC=1/' "${config_file}"
+	fi
+	sed -i -e 's#FACTORIO_PATH=/opt/factorio#FACTORIO_PATH="`create_tmp_empty_dir`"#' "${config_file}"
+	load_config "${config_file}"
+    
+	DEBUG=1
     tarball="/tmp/factorio_headless_x64_1.0.0.tar.xz"
 
     run install "${tarball}"

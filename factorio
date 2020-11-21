@@ -242,6 +242,7 @@ Available commands:
 }
 
 as_user() {
+  debug "as_user: $1}"
   if [ "$ME" == "$USERNAME" ]; then # Are we the factorio user?
     bash -c "$1"
   elif [ "$(id -u)" == "0" ]; then # Are we root?
@@ -531,7 +532,8 @@ install(){
   fi
 
   # Generate default config & create a default save-game to play on
-  if as_user "\"${BINARY}\" --create \"${target}/saves/server-save\" ${EXE_ARGS_GLIBC}"; then
+  debug "EXE_ARGS_GLIBC: ${EXE_ARGS_GLIBC}"
+  if as_user "${BINARY} --create ${target}/saves/server-save ${EXE_ARGS_GLIBC}"; then
     if ! as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""; then
       error "WARNING! Unable to copy server settings, may need to be resolved manually."
     fi
