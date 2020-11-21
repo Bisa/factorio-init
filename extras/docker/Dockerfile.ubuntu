@@ -1,7 +1,7 @@
 ARG ubuntu_version=20.04
 
 ### A base image without test resources:
-FROM ubuntu:$ubuntu_version AS no-test-resources
+FROM ubuntu:$ubuntu_version AS sans-test-resources
 ARG factorio_user=factorio
 ARG factorio_group=factorio
 
@@ -18,7 +18,7 @@ WORKDIR /opt/factorio-init
 ENTRYPOINT ["bash", "/opt/factorio-init/extras/test/libs/bats-core/bin/bats"]
 
 ### Build onto the base, add test resources:
-FROM no-test-resources AS with-test-resources
+FROM sans-test-resources AS with-test-resources
 ENV FACTORIO_INIT_WITH_TEST_RESOURCES=1
 ARG factorio_version=1.0.0
 
