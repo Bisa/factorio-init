@@ -54,8 +54,14 @@ function dockertest(){
 
 factorio_version="1.0.0"
 targets="with-test-resources sans-test-resources"
+
+# TODO:	Break the running of tests out into a separate script to facilitate:
+#		- only running selective tests/linting pre-commit, for sanity
+#		- running all/some tests from commandline (to avoid stashing/doing git specific stuff)
+#		- running all tests before pushing (ie what is happening now on every pre-commit)
 dockertest "ubuntu" "20.04 18.04" "${factorio_version}" "${targets}" "--jobs 10" &&
-dockertest "centos" "centos8" "${factorio_version}" "${targets}" || exit 1
-dockertest "centos" "centos7" "${factorio_version}" "with-glibc-sidebyside" || exit 1
+dockertest "ubuntu" "20.04 18.04" "${factorio_version}" "with-pre-installed-game" && #TODO make pre-installed game tests run in parallel
+dockertest "centos" "centos8" "${factorio_version}" "with-pre-installed-game ${targets}" || exit 1
+dockertest "centos" "centos7" "${factorio_version}" "with-pre-installed-game-glibc with-glibc-sidebyside" || exit 1
 
 __clean || exit 1

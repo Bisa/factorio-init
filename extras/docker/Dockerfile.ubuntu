@@ -25,3 +25,13 @@ ARG factorio_version=1.0.0
 RUN wget -O /tmp/factorio_headless_x64_${factorio_version}.tar.xz \
      https://factorio.com/get-download/${factorio_version}/headless/linux64
 
+### and pre-install the game
+FROM with-test-resources AS with-pre-installed-game
+USER root
+RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
+	chown -R ${factorio_user}:${factorio_group} /opt/factorio
+USER ${factorio_user}
+ENV FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1
+RUN /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save && \
+	cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
+

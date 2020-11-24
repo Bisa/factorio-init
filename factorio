@@ -782,7 +782,7 @@ run_main(){
       debug "Skip loading config for command '${command}'"
       ;;
     *)
-      load_config "${config_file}" "$*" || return $?
+      load_config "${config_file}" "$@" || return $?
       ;;
   esac
   
