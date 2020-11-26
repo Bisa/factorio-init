@@ -290,40 +290,62 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     assert_success
 }
 
-#@test "config_defaults() {}"
-#@test "usage()" {}
-#@test "as_user()" {}
-#@test "is_running()" {}
-#@test "wait_pingpong()" {}
-#@test "start_service()" {}
-#@test "stop_service()" {}
-#@test "send_cmd()" {}
-#@test "cmd_players()" {}
-#@test "check_permissions()" {}
-#@test "test_deps()" {}
-#@test "install()" {}
-#@test "get_bin_version()" {}
-#@test "get_bin_arch()" {}
-#@test "update()" {}
-#@test "mod()" {}
-
-#@test "run_main()" {}
-    #start)
-    #stop)
-    #restart)
-    #status)
-    #cmd)
-    #chatlog)
-    #players)
-    #players-online|online)
-    #new-game)
-    #save-game)
-    #load-save)
-    #install)
-    #update)
-    #inv|invocation)
-    #help|--help|-h)
-    #listcommands)
-    #listsaves)
-    #mod)
-    #version)
+#
+#grep -P '(function [^\(]+\(.+)|^ +[^\(\)]+\)$' factorio
+#
+#function debug() {
+#function error() {
+#function info() {
+#function load_config() {
+#function config_defaults() {
+#    install|help|listcommands|version|"")
+#    *)
+#function usage() {
+#function as_user() {
+#function is_running() {
+#function wait_pingpong() {
+#function start_service() {
+#function stop_service() {
+#function send_cmd(){
+#function cmd_players(){
+#function check_permissions(){
+#function test_deps(){
+#function install(){
+#function get_bin_version(){
+#function get_bin_arch(){
+#function update(){
+#function mod() {
+#  function mod_usage() {
+#    update)
+#    install)
+#    enable)
+#    disable)
+#    remove)
+#    list)
+#    help)
+#    *)
+#function run_main(){
+#    help|listcommands)
+#    *)
+#    start)
+#    stop)
+#    restart)
+#    status)
+#    cmd)
+#    chatlog)
+#        --tail|-t)
+#        *)
+#    players)
+#    players-online|online)
+#    new-game)
+#    save-game)
+#    load-save)
+#    install)
+#    update)
+#    inv|invocation)
+#    help)
+#    listcommands)
+#    listsaves)
+#    version)
+#    mod)
+#    *)
