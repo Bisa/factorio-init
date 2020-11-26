@@ -1,0 +1,63 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ master, github-workflows-ci ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  shellchecks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@master
+      - name: Shellchecks
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/mnt" koalaman/shellcheck:stable extras/.githooks/*
+          docker run --rm -v "$GITHUB_WORKSPACE:/mnt" koalaman/shellcheck:stable factorio
+  bats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@master
+      - name: Checkout submodules
+        uses: textbook/git-checkout-submodule-action@master
+      - name: Prepare env
+        run: |
+          echo "factorio_version=1.0.0" >> $GITHUB_ENV
+          echo "factorio_user=factorio" >> $GITHUB_ENV
+          echo "factorio_group=factorio" >> $GITHUB_ENV
+      - name: Add factorio user
+        run: |
+          sudo -E addgroup --system "${factorio_group}"
+          sudo -E adduser --system --ingroup "${factorio_group}" "${factorio_user}"
+      - name: Bats without resources
+        run: sudo -E -u "${factorio_user}" extras/test/libs/bats-core/bin/bats extras/test --jobs 10
+      - name: Fetch factorio
+        run: |
+          factorio_tar="/tmp/factorio_headless_x64_${factorio_version}.tar.xz"
+          sudo -E wget -O "${factorio_tar}" "https://factorio.com/get-download/${factorio_version}/headless/linux64"
+          echo "factorio_tar=${factorio_tar}" >> $GITHUB_ENV
+          echo "FACTORIO_INIT_WITH_TEST_RESOURCES=1" >> $GITHUB_ENV
+      - name: Bats with resources
+        run: sudo -E -u "${factorio_user}" extras/test/libs/bats-core/bin/bats extras/test --jobs 10
+      - name: Install factorio
+        run: |
+          sudo -E tar -xvf "${factorio_tar}" -C /opt
+          sudo -E chown -R "${factorio_user}":"${factorio_group}" /opt/factorio
+          sudo -E -u "${factorio_user}" /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save
+          sudo -E -u "${factorio_user}" cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
+          echo "FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1" >> $GITHUB_ENV
+      - name: Bats with pre-installed game
+        run: sudo -E -u "${factorio_user}" extras/test/libs/bats-core/bin/bats extras/test
+#  docker-tests:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout repo
+#        uses: actions/checkout@master
+#      - name: Checkout submodules
+#        uses: textbook/git-checkout-submodule-action@master
+#      - name: foo
+#        run: extras/.githooks/pre-commit
