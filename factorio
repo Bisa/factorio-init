@@ -710,6 +710,7 @@ Usage:
   mod (install|remove|enable|disable) MOD...  Install, remove, enable or disable all MODs
   mod list                                    List all installed mods, along with their status
 Flags:
+  --downgrade         Downgrade mod version until compatible version is found
   --dry-run, -n       Don't change anything, just print actions
   --verbose, -v       Be verbose
 EOH
@@ -725,6 +726,7 @@ EOH
   declare -a args
   for arg in "$@"; do
     case "$arg" in
+      "--downgrade") mod_script="$mod_script --downgrade" ;;
       "--dry-run"|"-n") mod_script="$mod_script --dry-run" ;;
       "--verbose"|"-v") mod_script="$mod_script --verbose" ;;
       *) args+=("$arg") ;;
