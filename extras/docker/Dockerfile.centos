@@ -36,27 +36,23 @@ RUN yum groupinstall -y \
 WORKDIR /tmp
 RUN wget -q http://ftp.gnu.org/gnu/glibc/glibc-2.18.tar.gz -O - |tar -xvz
 WORKDIR /tmp/glibc-2.18/glibc-build
+RUN sed "s/3\.\[89\]/3\.\[89\]\* | 4/" -i ../configure
 RUN ../configure --prefix='/opt/glibc-2.18' && \
 	sed -i -e 's#if (/$ld_so_name/) {#if (/\Q$ld_so_name\E/) {#' \
 		../scripts/test-installation.pl && \
 	make && \
 	make install # these take a while (~5 minutes on a i5 3.5GHz 32GB RAM WSL2 box)
+
 USER $factorio_user
 ENV FACTORIO_INIT_ALT_GLIBC=1
 WORKDIR /opt/factorio-init
 
-### and pre-install the game
-FROM with-test-resources AS with-pre-installed-game
-USER root
-RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
-	chown -R ${factorio_user}:${factorio_group} /opt/factorio
-USER ${factorio_user}
-ENV FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1
-RUN /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save && \
-	cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
-
 ### and pre-install the game for glibc
 FROM with-glibc-sidebyside AS with-pre-installed-game-glibc
+ARG factorio_user
+ARG factorio_group
+ARG factorio_version
+
 USER root
 RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
 	chown -R ${factorio_user}:${factorio_group} /opt/factorio
@@ -65,4 +61,18 @@ ENV FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1
 RUN /opt/glibc-2.18/lib/ld-2.18.so --library-path /opt/glibc-2.18/lib \
 	/opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save \
 	--executable-path /opt/factorio/bin/x64/factorio && \
+	cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
+
+### and pre-install the game
+FROM with-test-resources AS with-pre-installed-game
+ARG factorio_user
+ARG factorio_group
+ARG factorio_version
+
+USER root
+RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
+	chown -R ${factorio_user}:${factorio_group} /opt/factorio
+USER ${factorio_user}
+ENV FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1
+RUN /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save && \
 	cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
