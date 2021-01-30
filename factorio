@@ -224,6 +224,7 @@ Available commands:
   players-online \t\t\t\t\t Shows online players
   players \t\t\t\t\t\t Shows all players
   cmd [command/message] \t\t\t\t Open interactive commandline or send a single command to the server
+  log [--tail|-t] \t\t\t\t\t Print the full server log, optionally tail the log to follow in real time
   chatlog [--tail|-t] \t\t\t\t\t Print the current chatlog, optionally tail the log to follow in real time
   new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified
   \t\t\t\t\t\t\t name using the specified map gen settings and map settings json files
@@ -869,6 +870,16 @@ function run_main(){
           ;;
         *)
           grep -E -v "${NONCMDPATTERN}" "${CMDOUT}"
+          ;;
+      esac
+      ;;
+    log)
+      case $2 in
+        --tail|-t)
+          tail -F -n +0 "${CMDOUT}"
+          ;;
+        *)
+          cat "${CMDOUT}"
           ;;
       esac
       ;;

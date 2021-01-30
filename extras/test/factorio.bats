@@ -138,7 +138,7 @@ factorio_script=./factorio
     run run_main "" listcommands
     
     assert_line --index 0 'start'
-    assert_line --index 18 'help'
+    assert_line --index 19 'help'
     assert_success 1
 }
 
@@ -332,6 +332,9 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
 #    restart)
 #    status)
 #    cmd)
+#    log)
+#        --tail|-t)
+#        *)
 #    chatlog)
 #        --tail|-t)
 #        *)

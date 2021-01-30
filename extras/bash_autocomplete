@@ -10,6 +10,10 @@ _factorio()
 
     # command arguments
     case "${prev}" in
+        log)
+            COMPREPLY=( $(compgen -W "-t --tail" -- ${cur}) )
+            return 0
+            ;;
         chatlog)
             COMPREPLY=( $(compgen -W "-t --tail" -- ${cur}) )
             return 0
