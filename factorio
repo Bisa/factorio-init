@@ -10,153 +10,243 @@
 # Description: A init script for Factorio, try the help command
 ### END INIT INFO
 
-debug(){
-  if [ ${DEBUG} -gt 0 ]; then
-    echo "DEBUG: $@" >&2
+function debug() {
+  if [ "${DEBUG-0}" -gt 0 ]; then
+    echo "DEBUG: $*"
   fi
 }
 
-# Load config file
-if [ -L $0 ]; then
-  source `readlink -e $0 | sed "s:[^/]*$:config:"`
-else
-  source `echo $0 | sed "s:[^/]*$:config:"`
-fi
-
-if [ -z "${SERVICE_NAME}" ]; then
-  echo "Couldn't load config file, please edit config.example and rename it to config"
-  exit 1
-fi
-
-# Check/load defaults for backwards compatible config options
-if [ -z "${PACKAGE_DIR_NAME}" ]; then
-  PACKAGE_DIR_NAME=factorio
-fi
-if [ -z "${USERGROUP}" ]; then
-  USERGROUP=${USERNAME}
-fi
-if [ -z "${HEADLESS}" ]; then
-  # This is a server init script, assume headless default
-  HEADLESS=1
-fi
-if [ -z "${LATEST_HEADLESS_URL}" ]; then
-  if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
-    LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
-  else
-    LATEST_HEADLESS_URL="https://www.factorio.com/get-download/stable/headless/linux64"
-  fi
-fi
-if [ -z "${NONCMDPATTERN}" ]; then
-  NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
-fi
-if [ -z ${BINARY} ]; then
-  # Factorio headless only comes in x64 flavour - if you run anything else, override it in the config
-  BINARY="${FACTORIO_PATH}/bin/x64/factorio"
-  BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
-fi
-if [ -z ${ALT_GLIBC} ]; then
-  ALT_GLIBC=0
-fi
-if [ -z ${WAIT_PINGPONG} ]; then
-  WAIT_PINGPONG=0
-fi
-
-if [ ${ALT_GLIBC} -gt 0 ]; then
-  # If ALT_GLIBC is non 0 then activate alternative glibc root here
-  BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${FACTORIO_PATH}/bin/x64/factorio"
-  BINARYB="${FACTORIO_PATH}/bin/x64/factorio"
-  EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
-fi
-case "$1" in
-  install|help|listcommands|version|"")
-    ;;
-  *)
-    if ! [ -e ${BINARYB} ]; then
-      echo "Could not find factorio binary! ${BINARYB}"
-      echo "(if you store your binary some place else, override BINARY='/your/path' in the config)"
-      exit 1
-    fi
-  
-    if [ -z ${FCONF} ]; then
-      FCONF="${FACTORIO_PATH}/config/config.ini"
-    fi
-  
-    if ! [ -e "${SERVER_SETTINGS}" ]; then
-      echo "Could not find factorio server settings file: ${SERVER_SETTINGS}"
-      echo "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
-      exit 1
-    fi
-  
-    if ! [ -e ${FCONF} ]; then
-      echo "Could not find factorio config file: ${FCONF}"
-      echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
-      echo "(also make sure you have a save to run or the server will not start)"
-      echo
-      echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame ${EXE_ARGS_GLIBC}"
-      echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest ${EXE_ARGS_GLIBC}"
-      echo
-      echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
-      exit 1
-    fi
-    if [ -z "${WRITE_DIR}" ]; then
-      # figure out the write-data path (where factorio looks for saves and mods)
-      # Note - this is a hefty little operation, possible cause of head ache down the road
-      # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
-      # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
-      debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
-      WRITE_DIR=$(dirname "$(echo `grep "^write-data=" "$FCONF"` |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'$(dirname "$BINARYB")/..'#g')")
-    fi
-    debug "write path: $WRITE_DIR"
-  
-    PIDFILE="${WRITE_DIR}/server.pid"
-  
-    if [ -z "${FIFO}" ];then
-      FIFO="${WRITE_DIR}/server.fifo"
-    fi
-  
-    if [ -z "${CMDOUT}" ];then
-      CMDOUT="${WRITE_DIR}/server.out"
-    fi
-  
-    if [ -z "${SAVELOG}" ]; then
-      SAVELOG=0
-    fi
-  
-    # Finally, set up the invocation
-    INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} ${EXTRA_BINARGS}"
-    ;;
-esac
-  
-usage(){
-  echo "Usage: $0 COMMAND"
-  echo
-  echo "Available commands:"
-  echo -e "   start \t\t\t\t Starts the server"
-  echo -e "   stop \t\t\t\t Stops the server"
-  echo -e "   restart \t\t\t\t Restarts the server"
-  echo -e "   status \t\t\t\t Displays server status"
-  echo -e "   players-online \t\t\t Shows online players"
-  echo -e "   players \t\t\t\t Shows all players"
-  echo -e "   cmd [command/message] \t\t Open interactive commandline or send a single command to the server"
-  echo -e "   chatlog [--tail|-t] \t\t\t Print the current chatlog, optionally tail the log to follow in real time"
-  echo -e "   new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified name using the specified map gen settings and map settings json files"
-  echo -e "   save-game name \t\t\t Stops the server and saves game to specified save"
-  echo -e "   load-save name \t\t\t Stops the server and loads the specified save"
-  echo -e "   install [tarball] \t\t\t Installs the server with optional specified tarball (omit to download and use the latest headless server from Wube)"
-  echo -e "   update [--dry-run] \t\t\t Updates the server"
-  echo -e "   invocation \t\t\t\t Outputs the invocation for debugging purpose"
-  echo -e "   listcommands \t\t\t List all init-commands"
-  echo -e "   listsaves \t\t\t\t List all saves"
-  echo -e "   version \t\t\t\t Prints the binary version"
-  echo -e "   help \t\t\t\t Shows this help message"
+function error() {
+  echo "$*" 1>&2
 }
 
-ME=`whoami`
-as_user() {
-  if [ $ME == $USERNAME ]; then # Are we the factorio user?
+function info() {
+  echo "$*"
+}
+
+function load_config() {
+  # unless a path is provided as the first argument,
+  # assume there's a "config" file in our current directory.
+  config_file="${1-./config}"; shift
+  debug "Trying to load config file '${config_file}'."
+
+  # check that the file exists
+  [ -f "${config_file}" ] || { error "Config file '${config_file}' does not exist!"; return 1; }
+  # and we can read it
+  [ -r "${config_file}" ] || { error "Unable to read config file '${config_file}'!"; return 1; }
+  # then try to source it
+  # shellcheck disable=SC1090
+  source "${config_file}" || { error "Unable to source config file '${config_file}'!"; return 1; }
+
+  config_defaults "$1"
+  return $?
+}
+
+function config_defaults() {
+  command=$1
+  debug "Check/Loading config defaults for command '${command}'"
+
+  ME=$(whoami)
+
+  if [ -z "${SERVICE_NAME}" ]; then
+    SERVICE_NAME="Factorio"
+  fi
+  
+  if [ -z "${USERGROUP}" ]; then
+    USERGROUP=${USERNAME}
+  fi
+
+  if [ -z "${HEADLESS}" ]; then
+    HEADLESS=1
+  fi
+
+  if [ -z "${UPDATE_EXPERIMENTAL}" ]; then
+    UPDATE_EXPERIMENTAL=0
+  fi  
+
+  if [ -z "${LATEST_HEADLESS_URL}" ]; then
+    if [ "${UPDATE_EXPERIMENTAL}" -gt 0 ]; then
+      LATEST_HEADLESS_URL="https://www.factorio.com/get-download/latest/headless/linux64"
+    else
+      LATEST_HEADLESS_URL="https://www.factorio.com/get-download/stable/headless/linux64"
+    fi
+  fi
+
+  if [ -z "${UPDATE_PREVENT_RESTART}" ]; then
+    UPDATE_PREVENT_RESTART=0
+  fi
+
+  if [ -z "${UPDATE_PERSIST_TMPDIR}" ]; then
+    UPDATE_PERSIST_TMPDIR=0
+  fi
+
+  if [ -z "${NONCMDPATTERN}" ]; then
+    NONCMDPATTERN='(^\s*(\s*[0-9]+\.[0-9]+|\)|\())|(Players:$)'
+  fi
+
+  if [ -z "${FACTORIO_PATH}" ]; then
+    FACTORIO_PATH="/opt/factorio"
+  fi
+
+  if [ -z "${BINARY}" ]; then
+    BINARY="${FACTORIO_PATH}/bin/x64/factorio"
+  fi
+
+  if [ -z "${BINARYB}" ]; then
+    BINARYB="${BINARY}"
+  fi
+  
+  if [ -z "${ALT_GLIBC}" ]; then
+    ALT_GLIBC=0
+  fi
+
+  if [ -z "${WAIT_PINGPONG}" ]; then
+    WAIT_PINGPONG=0
+  fi
+
+  if [ -z "${ADMINLIST}" ]; then
+    ADMINLIST="${FACTORIO_PATH}/data/server-adminlist.json"
+  fi
+
+  if [ "${ALT_GLIBC}" -gt 0 ]; then
+    if [ -z "${ALT_GLIBC_DIR}" ]; then
+      ALT_GLIBC_DIR="/opt/glibc-2.18"
+    fi
+
+    if [ -z "${ALT_GLIBC_VER}" ]; then
+      ALT_GLIBC_VER="2.18"
+    fi
+    
+    # flip BINARY to include alt glibc
+    oldbinary="${BINARY}"
+    BINARY="${ALT_GLIBC_DIR}/lib/ld-${ALT_GLIBC_VER}.so --library-path ${ALT_GLIBC_DIR}/lib ${oldbinary}"
+    EXE_ARGS_GLIBC="--executable-path ${BINARYB}"
+  fi
+  
+  if [ -z "${FCONF}" ]; then
+    FCONF="${FACTORIO_PATH}/config/config.ini"
+  fi
+
+  if [ -z "${SERVER_SETTINGS}" ]; then
+    SERVER_SETTINGS="${FACTORIO_PATH}/data/server-settings.json"
+  fi
+
+  if [ -z "${SAVELOG}" ]; then
+    SAVELOG=0
+  fi
+
+  if [ -z "${PORT}" ]; then
+    PORT=34197
+  fi
+
+  if [ -z "${INSTALL_CACHE_TAR}" ]; then
+    INSTALL_CACHE_TAR=0
+  fi
+
+  if [ -z "${INSTALL_CACHE_DIR}" ]; then
+    INSTALL_CACHE_DIR=/tmp/factorio-install.cache
+  fi
+
+  # perform some sanity checks in order to properly load the configuration
+  case $command in
+    install|help|listcommands|version|"")
+      debug "Skip check/loading defaults for command '${command}'"
+      ;;
+    *)
+      if ! [ -e "${BINARYB}" ]; then
+        error "Could not find factorio binary! ${BINARYB}"
+        error "(if you store your binary some place else, override BINARY='/your/path' in the config)"
+        return 1
+      fi
+    
+      if ! [ -e "${SERVER_SETTINGS}" ]; then
+        error "Could not find factorio server settings file: ${SERVER_SETTINGS}"
+        error "Update your config and point SERVER_SETTINGS to a modified version of data/server-settings.example.json"
+        return 1
+      fi
+    
+      if ! [ -e "${FCONF}" ]; then
+        echo "Could not find factorio config file: ${FCONF}"
+        echo "If this is the first time you run this script you need to generate the config.ini by starting the server manually."
+        echo "(also make sure you have a save to run or the server will not start)"
+        echo
+        echo "Create save: sudo -u ${USERNAME} ${BINARY} --create ${FACTORIO_PATH}/saves/my_savegame ${EXE_ARGS_GLIBC}"
+        echo "Start server: sudo -u ${USERNAME} ${BINARY} --start-server-load-latest ${EXE_ARGS_GLIBC}"
+        echo
+        echo "(If you rather store the config.ini in another location, set FCONF='/your/path' in this scripts config file)"
+        return 1
+      fi
+
+      if [ -z "${WRITE_DIR}" ]; then
+        # figure out the write-data path (where factorio looks for saves and mods)
+        # Note - this is a hefty little operation, possible cause of head ache down the road
+        # as it relies on the factorio write dir to live ../../ up from the binary if __PATH__executable__
+        # is used in the config file.. for now, that's the default so cross your fingers it will not change ;)
+        debug "Determining WRITE_DIR based on ${FCONF}, IF you edited write-data from the default, this probably fails"
+        WRITE_DIR=$(dirname "$(grep "^write-data=" "$FCONF" |cut -d'=' -f2 |sed -e 's#__PATH__executable__#'"$(dirname ${BINARYB})"/..'#g')")
+      fi
+      debug "write path: $WRITE_DIR"
+    
+      PIDFILE="${WRITE_DIR}/server.pid"
+
+      if [ -z "${FIFO}" ];then
+        FIFO="${WRITE_DIR}/server.fifo"
+      fi
+
+      if [ -z "${CMDOUT}" ];then
+        CMDOUT="${WRITE_DIR}/server.out"
+      fi
+
+      # Finally, set up the invocation
+      INVOCATION="${BINARY} --config ${FCONF} --port ${PORT} --start-server-load-latest --server-settings ${SERVER_SETTINGS} --server-adminlist ${ADMINLIST}"
+      if [ -n "${WHITELIST}" ] && [ -e "${WHITELIST}" ]; then
+        INVOCATION+=" --server-whitelist ${WHITELIST} --use-server-whitelist"
+      fi
+      if [ -n "${BANLIST}" ] && [ -e "${BANLIST}" ]; then
+        INVOCATION+=" --server-banlist ${BANLIST}"
+      fi
+      INVOCATION+=" ${EXTRA_BINARGS}"
+      ;;
+  esac
+
+  return 0
+}
+  
+function usage() {
+  echo -e "\
+Usage: $0 COMMAND
+
+Available commands:
+  start \t\t\t\t\t\t Starts the server
+  stop \t\t\t\t\t\t\t Stops the server
+  restart \t\t\t\t\t\t Restarts the server
+  status \t\t\t\t\t\t Displays server status
+  players-online \t\t\t\t\t Shows online players
+  players \t\t\t\t\t\t Shows all players
+  cmd [command/message] \t\t\t\t Open interactive commandline or send a single command to the server
+  chatlog [--tail|-t] \t\t\t\t\t Print the current chatlog, optionally tail the log to follow in real time
+  new-game name [map-gen-settings] [map-settings] \t Stops the server and creates a new game with the specified
+  \t\t\t\t\t\t\t name using the specified map gen settings and map settings json files
+  save-game name \t\t\t\t\t Stops the server and saves game to specified save
+  load-save name \t\t\t\t\t Stops the server and loads the specified save
+  install [tarball] \t\t\t\t\t Installs the server with optional specified tarball
+  \t\t\t\t\t\t\t (omit to download and use the latest headless server from Wube)
+  update [--dry-run] \t\t\t\t\t Updates the server
+  invocation \t\t\t\t\t\t Outputs the invocation for debugging purpose
+  listcommands \t\t\t\t\t\t List all init-commands
+  listsaves \t\t\t\t\t\t List all saves
+  version \t\t\t\t\t\t Prints the binary version
+  mod \t\t\t\t\t\t\t Manage mods (see $0 mod help for more information)
+  help \t\t\t\t\t\t\t Shows this help message
+"
+}
+
+function as_user() {
+  debug "as_user: $1}"
+  if [ "$ME" == "$USERNAME" ]; then # Are we the factorio user?
     bash -c "$1"
   elif [ "$(id -u)" == "0" ]; then # Are we root?
-    su $USERNAME -s /bin/bash -c "$1"
+    su "$USERNAME" -s /bin/bash -c "$1"
   else
     # To prevent odd permission behaviour, either
     # run this script as the configured user or as root
@@ -166,45 +256,59 @@ as_user() {
   fi
 }
 
-is_running() {
-  if [ -e ${PIDFILE} ]; then
-    if kill -0 $(cat ${PIDFILE}) 2> /dev/null; then
-      debug "${SERVICE_NAME} is running with pid $(cat ${PIDFILE})"
+function is_running() {
+  if [ -e "${PIDFILE}" ]; then
+    if kill -0 "$(cat "${PIDFILE}")" 2> /dev/null; then
+      debug "${SERVICE_NAME} is running with pid $(cat "${PIDFILE}")"
       return 0
     else
       debug "Found ${PIDFILE}, but the server is not running. It's possible that your server has crashed"
       debug "Check the log for details"
-      rm ${PIDFILE} 2> /dev/null
+      rm "${PIDFILE}" 2> /dev/null
       return 2
     fi
   fi
   return 1
 }
 
-wait_pingpong() {
+function wait_pingpong() {
   until ping -c1 pingpong1.factorio.com &>/dev/null; do :; done
   until ping -c1 pingpong2.factorio.com &>/dev/null; do :; done
 }
 
-start_service() {
-  if [ -e ${PIDFILE} ]; then
-    ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-    if [ "$?" -eq "0" ]; then
+function start_service() {
+  if is_running; then
       echo "${SERVICE_NAME} is already running!"
       return 1
-    fi
-    debug "Found rogue pid file, server might have crashed"
-    rm ${PIDFILE} 2> /dev/null
   fi
 
   if ! check_permissions; then
-    echo "Error! Incorrect permissions, unable to write to ${WRITE_DIR}"
+    return $?
+  fi
+
+  # ensure we have a binary to start
+  if ! [ -e "${BINARYB}" ]; then
+    echo "Can't find ${BINARYB}. Please check your config!"
     return 1
   fi
 
-  if [ "${SAVELOG}" ==  "0" ]; then
+  # ensure we have a fifo
+  if ! [ -p "${FIFO}" ]; then
+    if ! as_user "mkfifo ${FIFO}"; then
+      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
+      return 1
+    fi
+  fi
+
+  if [ ${SAVELOG} -eq 0 ]; then
     debug "Erasing log ${CMDOUT}"
-    echo "" > ${CMDOUT}
+    echo "" > "${CMDOUT}"
+  fi
+
+  if ! [ -e ${ADMINLIST} ]; then
+    debug "${ADMINLIST} does not exist!  Creating empty file."
+    echo "[]" > ${ADMINLIST}
+    chown "${USERNAME}:${USERGROUP}" ${ADMINLIST}
   fi
 
   if [ ${WAIT_PINGPONG} -gt 0 ]; then
@@ -213,23 +317,23 @@ start_service() {
 
   as_user "tail -f ${FIFO} |${INVOCATION} ${EXE_ARGS_GLIBC}>> ${CMDOUT} 2>&1 & echo \$! > ${PIDFILE}"
 
-  ps -p $(cat ${PIDFILE}) > /dev/null 2>&1
-  if [ "$?" -ne "0" ]; then
-    echo "Unable to start ${SERVICE_NAME}"
-    return 1
-  else
+  if ps -p "$(cat "${PIDFILE}")" > /dev/null 2>&1; then
     echo "Started ${SERVICE_NAME}, please see log for details"
+  else
+    as_user "cat ${CMDOUT} |grep -v -P '^$'"
+    echo -e "\nUnable to start ${SERVICE_NAME}"
+    return 1
   fi
 }
 
-stop_service() {
-  if [ -e ${PIDFILE} ]; then
+function stop_service() {
+  if [ -e "${PIDFILE}" ]; then
     echo -n "Stopping ${SERVICE_NAME}: "
-    if kill -TERM $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+    if kill -TERM "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
       sec=1
       while [ "$sec" -le 15 ]; do
-        if [ -e ${PIDFILE} ]; then
-          if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+        if [ -e "${PIDFILE}" ]; then
+          if kill -0 "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
             echo -n ". "
             sleep 1
           else
@@ -238,27 +342,27 @@ stop_service() {
         else
           break
         fi
-        sec=$(($sec+1))
+        sec=$((sec+1))
       done
     fi
 
-    if kill -0 $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null; then
+    if kill -0 "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
       echo "Unable to shut down nicely, killing the process!"
-      kill -KILL $(cat ${PIDFILE} 2> /dev/null) 2> /dev/null
+      kill -KILL "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null
     else
       echo "complete!"
     fi
 
     # Start the reader (in case tail stopped already)
-    cat ${FIFO} &
+    cat "${FIFO}" &
     # Open pipe for writing.
-    exec 3> ${FIFO}
+    exec 3> "${FIFO}"
     # Write a newline to the pipe, this triggers a SIGPIPE and causes tail to exit
     echo "" >&3
     # Close pipe.
     exec 3>&-
 
-    rm ${PIDFILE} 2> /dev/null
+    rm "${PIDFILE}" 2> /dev/null
     return 0 # we've either shut down gracefully or killed the process
   else
     echo "${SERVICE_NAME} is not running (${PIDFILE} does not exist)"
@@ -266,30 +370,30 @@ stop_service() {
   fi
 }
 
-send_cmd(){
+function send_cmd(){
   NEED_OUTPUT=0
   if [ "xx$1" == "xx-o" ]; then
     NEED_OUTPUT=1
     shift
   fi
   if is_running; then
-    if [ -p ${FIFO} ]; then
+    if [ -p "${FIFO}" ]; then
       # Generate two unique log markers
       TIMESTAMP=$(date +"%s")
       START="FACTORIO_INIT_CMD_${TIMESTAMP}_START"
       END="FACTORIO_INIT_CMD_${TIMESTAMP}_END"
 
       # Whisper that unknown player to place start marker in log
-      echo "/w $START" > ${FIFO}
+      echo "/w $START" > "${FIFO}"
       # Run the actual command
-      echo $@ > ${FIFO}
+      echo "$*" > "${FIFO}"
       # Whisper that unknown player again to place end marker in log after the command terminated
-      echo "/w $END" > ${FIFO}
+      echo "/w $END" > "${FIFO}"
 
       if [ ${NEED_OUTPUT} -eq 1 ]; then
         # search for the start marker in the log file, then follow and print the log output in real time until the end marker is found
         sleep 1
-        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < ${CMDOUT}
+        awk "/Player $START doesn't exist./{flag=1;next}/Player $END doesn't exist./{exit}flag" < "${CMDOUT}"
       fi
     else
       echo "${FIFO} is not a pipe!"
@@ -301,7 +405,7 @@ send_cmd(){
   fi
 }
 
-cmd_players(){
+function cmd_players(){
   players=$(send_cmd -o "/p")
   if [ -z "${players}" ]; then
     echo "No players found!"
@@ -309,137 +413,155 @@ cmd_players(){
   fi
 
   if [ "$1" == "online" ]; then
-    echo "${players}" |egrep '.+ \(online\)$' |sed -e 's/ (online)//g'
+    echo "${players}" |grep -E '.+ \(online\)$' |sed -e 's/ (online)//g'
   else
     echo "${players}"
   fi
 }
 
-check_permissions(){
-  if [ ! -e "${BINARYB}" ]; then
-    echo "Can't find ${BINARYB}. Please check your config!"
-    exit 1
-  fi
-
+function check_permissions(){
   if ! as_user "test -w ${WRITE_DIR}" ; then
     echo "Check Permissions. Cannot write to ${WRITE_DIR}"
-    exit 1
+    return 1
   fi
 
   if ! as_user "touch ${PIDFILE}" ; then
     echo "Check Permissions. Cannot touch pidfile ${PIDFILE}"
-    exit 1
-  fi
-
-  if ! [ -p ${FIFO} ]; then
-    if ! as_user "mkfifo ${FIFO}"; then
-      echo "Failed to create pipe for stdin, if applicable, remove ${FIFO} and try again"
-      exit 1
-    fi
+    return 1
   fi
 
   if ! as_user "touch ${CMDOUT}" ; then
     echo "Check Permissions. Cannot touch cmd output file ${CMDOUT}"
-    exit 1
+    return 1
   fi
 }
 
-test_deps(){
+function test_deps(){
   return 0 # TODO: Implement ldd check on $BINARY
 }
 
-install(){
-  # Factorio comes packaged in a directory named "factorio"
-  # Unless overriden in the config we will presume this is also the
-  # name used in FACTORIO_PATH
-  expected_path="`dirname ${FACTORIO_PATH}`/${PACKAGE_DIR_NAME}"
-  if ! [ "${FACTORIO_PATH}" == "${expected_path}" ]; then
-    echo "Aborting install! FACTORIO_PATH does not match expected path: ${expected_path}"
-    echo "See config option PACKAGE_DIR_NAME for more details"
-    exit 1
-  fi
-
+function install(){
   # Prevent accidential overwrites
-  if [ -e "${expected_path}" ]; then
-    echo "Aborting install, ${FACTORIO_PATH} already exists"
-    exit 1
+  if [ -e "${FACTORIO_PATH}" ]; then
+    if [ -n "$(ls -A ${FACTORIO_PATH} 2>&1)" ]; then
+      error "Aborting install, '${FACTORIO_PATH}' is not empty!"
+      return 1
+    fi
   fi
 
-  tarball=$1
-  if ! [ -z "$tarball" ]; then
-    if ! [ -f "${tarball}" ]; then
-      echo "Install package does not exist! ${tarball}"
-      exit 1
-    fi
-  else
+  tarball="$1"
+  if [ -z "${tarball}" ]; then
     downloadlatest=1
+  elif ! [ -e "${tarball}" ]; then
+    error "Aborting install, '${tarball}' does not exist!"
+    return 1
   fi
 
-  target="`dirname ${FACTORIO_PATH}`"
+  target="${FACTORIO_PATH}"
   if ! test -w "${target}"; then
-    echo "Failed to write, aborting install!"
-    echo "Install needs to be run as a user with write permissions to ${target}"
-    exit 1
+    error "Aborting install, unable to write to '${target}'!"
+    return 1
   fi
 
-  if [ $downloadlatest ]; then
-    LATEST_HEADLESS_URL_REDIRECT_FILENAME=$(curl ${LATEST_HEADLESS_URL} -s -L -I -o /dev/null -w '%{url_effective}')
-    if [[ $LATEST_HEADLESS_URL_REDIRECT_FILENAME == *"tar.xz"* ]]; then 
-      TAR_OPTIONS="-xJv"
+  if [ "${downloadlatest}" = 1 ]; then
+    # fetch a http HEAD response, we need it to know what to download later
+    debug "Checking for latest headless version."
+    if ! httpresponse="$(curl -LIs "${LATEST_HEADLESS_URL}" 2>&1)"; then
+      info "${httpresponse}"
+      error "Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
+      return 1
     else
-      TAR_OPTIONS="-xzv"
+      httpstatus="$(echo "${httpresponse}" |grep HTTP |tail -n -1 |grep -oP '(?<= )\d{3}(?= )')"
+      if ! [ "${httpstatus}" = "200" ]; then
+        info "${httpresponse}"
+        error "Aborting install, expected HTTP 200 from '${LATEST_HEADLESS_URL}', got '${httpstatus}'."
+        return 1
+      fi
     fi
-    if ! wget ${LATEST_HEADLESS_URL} -O - | tar ${TAR_OPTIONS} --directory "${target}"; then
-      echo "Install failed!"
-      exit 1
+    
+    # parse the response
+    filename="$(echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1)"
+    #location=$(echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1)
+    debug "Found, latest version: '${filename}'"
+
+    if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
+      # we want to cache the tarballs, ensure we have somewhere to save them
+      if ! [ -e "${INSTALL_CACHE_DIR}" ]; then
+        if ! as_user "mkdir -p \"${INSTALL_CACHE_DIR}\""; then
+          error "Aborting install, unable to create cache '${INSTALL_CACHE_DIR}'."
+          return 1
+        fi
+      fi
+      if ! as_user "test -w \"${INSTALL_CACHE_DIR}\""; then
+        error "Aborting install, unable to write to cache '${INSTALL_CACHE_DIR}'."
+        return 1
+      fi
+      # we have a usable cache dir, check if there's a hit for our wanted tarball
+      tarball="${INSTALL_CACHE_DIR}/${filename}"
+      if [ -f "${tarball}" ]; then
+        debug "Found cached '${tarball}'."
+      else
+        debug "No cache hit for '${filename}'."
+        tarball=
+      fi
+    fi
+  fi
+  
+  if [ -z "${tarball}" ]; then
+    if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
+      tarball="${INSTALL_CACHE_DIR}/${filename}"
+      if ! as_user "wget -O \"${tarball}\" \"${LATEST_HEADLESS_URL}\""; then
+        error "Aborting install, unable to download & cache '${tarball}'."
+        return 1
+      fi
+      if ! as_user "tar --strip-components 1 -xf \"${tarball}\" -C \"${target}\""; then
+        error "Aborting install, unable to extract '${tarball}'."
+        return 1
+      fi  
+    else
+      if ! as_user "wget -O - \"${LATEST_HEADLESS_URL}\" |tar --strip-components 1 -xC \"${target}\""; then
+        error "Aborting install, unable to download and extract tarball."
+        return 1
+      fi
     fi
   else
-    echo "Installing ${tarball} ..."
-    if [[ $tarball == *"tar.xz"* ]]; then 
-      TAR_OPTIONS="-xJvf"
-    else
-      TAR_OPTIONS="-xzvf"
-    fi
-    if ! tar ${TAR_OPTIONS} "${tarball}" --directory "${target}"; then
-      echo "Install failed!"
-      exit 1
+    if ! as_user "tar --strip-components 1 -xf \"${tarball}\" -C \"${target}\""; then
+      error "Aborting install, unable to extract '${tarball}'."
+      return 1
     fi
   fi
 
-  echo "Applying file ownership ..."
-  if ! chown -R ${USERNAME}:${USERGROUP} ${FACTORIO_PATH}; then
-    echo "Failed to apply ownership ${USERNAME}:${USERGROUP} for ${FACTORIO_PATH}"
-    exit 1
-  fi
-
-  # Generate default config.ini by creating a save
-  as_user "${BINARY} --create ${FACTORIO_PATH}/saves/server-save ${EXE_ARGS_GLIBC}"
-  if [ $? -eq 0 ]; then
-    echo "Installation complete, edit data/server-settings.json and start your server"
-    exit 0
+  # Generate default config & create a default save-game to play on
+  debug "EXE_ARGS_GLIBC: ${EXE_ARGS_GLIBC}"
+  if as_user "${BINARY} --create ${target}/saves/server-save ${EXE_ARGS_GLIBC}"; then
+    if ! as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""; then
+      error "WARNING! Unable to copy server settings, may need to be resolved manually."
+    fi
+    info "Installation complete, edit '${target}/data/server-settings.json' and start your server."
+    return 0
   else
-    echo "Failed to create save, review the output above to recover"
-    exit 1
+    error "Failed to create save, review the output above to recover"
+    return 1
   fi
 }
 
-get_bin_version(){
-  echo `as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"`
+function get_bin_version(){
+  as_user "$BINARY --version |egrep '^Version: [0-9\.]+' |egrep -o '[0-9\.]+' |head -n 1"
 }
 
-get_bin_arch(){
-  echo `as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"`
+function get_bin_arch(){
+  as_user "$BINARY --version |egrep '^Binary version: ' |egrep -o '[0-9]{2}'"
 }
 
-update(){
+function update(){
   if ! [ -e "${UPDATE_SCRIPT}" ]; then
     echo "Failed to find update script, blatantly refusing to continue!"
     echo "Try cloning into git@github.com:narc0tiq/factorio-updater.git and set the UPDATE_SCRIPT config before you try again."
-    exit 1
+    return 1
   fi
 
   # Assume the user wants a dry run? (our only argument to this function)
-  if ! [ -z "$1" ]; then
+  if [ -n "$1" ]; then
     echo "Running updater in --dry-run mode, no patches will be applied"
     dryrun=1
   else
@@ -447,27 +569,46 @@ update(){
   fi
 
   if [ ${HEADLESS} -gt 0 ]; then
-    package="core-linux_headless`get_bin_arch`"
+    package="core-linux_headless$(get_bin_arch)"
   else
-    package="core-linux`get_bin_arch`"
+    package="core-linux$(get_bin_arch)"
   fi
 
-  version=`get_bin_version`
+  version=$(get_bin_version)
   if [ -z "${UPDATE_TMPDIR}" ]; then
     UPDATE_TMPDIR=/tmp
   fi
 
-  # Create tmpdir and ensure automatic cleanup
-  tmpdir=`as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"`
-  if [ $? -ne 0 ]; then
-    echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
-    exit 1
+  if [ $UPDATE_PERSIST_TMPDIR -gt 0 ]; then
+    # check/create tmpdir to ensure updater can download patches here
+    tmpdir="${UPDATE_TMPDIR}/factorio-update"
+    debug "Checking/creating update directory (persistant): ${tmpdir}"
+    if ! [ -e "${tmpdir}" ]; then
+      if ! as_user "mkdir -p ${tmpdir}"; then
+        echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+        return 1
+      fi
+    fi
+    if ! as_user "test -w ${tmpdir}"; then
+      echo "Aborting update! Unable to write to tmpdir: ${tmpdir}"
+      return 1
+    fi
+  else
+    # Create tmpdir and ensure automatic cleanup
+    debug "Creating update tmpdir: ${tmpdir}"
+    if ! tmpdir=$(as_user "mktemp -d -p ${UPDATE_TMPDIR} factorio-update.XXXXXXXXXX"); then
+      echo "Aborting update! Unable to create tmpdir: ${tmpdir}"
+      return 1
+    fi
+    trap 'rm -rf "${tmpdir}"' EXIT
   fi
-  trap "rm -rf ${tmpdir}" EXIT
-    
-  invocation="python ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
+
+  invocation="python3 ${UPDATE_SCRIPT} --for-version ${version} --package ${package} --output-path ${tmpdir}"
   if [ ${UPDATE_EXPERIMENTAL} -gt 0 ]; then
     invocation="${invocation} --experimental"
+  fi
+  if [ "${DEBUG}" -gt 0 ]; then
+    invocation="${invocation} --verbose"
   fi
 
   if [ ${HEADLESS} -eq 0 ]; then
@@ -477,38 +618,51 @@ update(){
   fi
 
   echo "Checking for updates..."
-  result=`as_user "${invocation} --dry-run"`
+  result=$(as_user "${invocation} --dry-run")
   exitcode=$?
-  if [ ${exitcode} -eq 1 -o ${exitcode} -gt 2 ]; then
+  if [ ${exitcode} -eq 1 ] || [ ${exitcode} -gt 2 ]; then
     debug "Invocation: ${invocation}"
     debug "${result}"
     echo "Update check failed!"
-    exit 1
+    return 1
   else
-    newversion=`echo ${result} |egrep '^Dry run: ' |egrep -o '[0-9\.]+' |tail -n 1`
+    newversion=$(echo "${result}" |grep -E '^Dry run: ' |grep -E -o '[0-9\.]+' |tail -n 1)
   fi
 
   if [ -z "${newversion}" ]; then
     echo "No new updates for ${package} ${version}"
-    exit 0
+    return 0
   else
     echo "New version ${package} ${newversion}"
   fi
 
   # Go or no Go?
   if [ ${dryrun} -gt 0 ]; then
-    echo "Dry run, not taking further actions!"
+    debug "This is a dry-run, not taking any further actions."
     # allow scripts to read return code 0 for no updates and 2 if there are updates to apply
-    if ! [ -z "${newversion}" ]; then
-      exit 2
+    if [ -n "${newversion}" ]; then
+      return 2
     fi
-    exit 0
+    return 0
+  fi
+
+  # Prevent update restart, ie require the server to be stopped before we apply updates
+  if [ $UPDATE_PREVENT_RESTART -gt 0 ]; then
+    debug "Preventing update restarts ..."
+    if is_running; then
+      echo "Factorio is running, aborting update - stop the server and re-run the update command!"
+      return 3
+    else
+      debug "Server wasn't running, continue with the update."
+    fi
+  else
+    debug "Will not prevent update restarts."
   fi
 
   # Time to download the updates
   if ! as_user "${invocation}"; then
     echo "Aborting update!"
-    exit 1
+    return 1
   fi
 
   # Stop the server if it is running.
@@ -517,243 +671,332 @@ update(){
   if [ ${was_running} -eq 0 ]; then
     send_cmd "Updating to new Factorio version, be right back"
     stop_service
+    if is_running; then
+      echo "Aborting update! The server is still running."
+      return 1
+    fi
   fi
 
-  for patch in $(find ${tmpdir} -type f -name "*.zip" | sort -V); do
+  for patch in $(find "${tmpdir}" -type f -name "*.zip" | sort -V); do
     echo "Applying ${patch} ..."
-    result=`as_user "$BINARY --apply-update ${patch} ${EXE_ARGS_GLIBC}"`
+    result=$(as_user "$BINARY --apply-update ${patch} ${EXE_ARGS_GLIBC}")
     exitcode=$?
     if [ $exitcode -gt 0 ]; then
       echo "${result}"
       echo
       echo "Error! Failed to apply update"
-      echo "You can try to apply it manually with:"
-      echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
-      exit 1
+      if [ $UPDATE_PERSIST_TMPDIR -gt 0 ]; then
+        echo "You can try to apply it manually with:"
+        echo "su ${USERNAME} -c \"${BINARY} --apply-update ${patch} ${EXE_ARGS_GLIBC}\""
+      fi
+      return 1
     fi
   done
-  
+
   # Restarts the server if it was running
   if [ ${was_running} -eq 0 ]; then
     start_service
   fi
 
   echo "Successfully updated factorio"
+  return 0
 }
 
-case "$1" in
-  start)
-    # Starts the server
-    if is_running; then
-      echo "Server already running."
-      exit 0
-    else
-       if ! start_service; then
-         echo "Could not start $SERVICE_NAME"
-         exit 1
-       fi
-    fi
-    ;;
+function mod() {
+  function mod_usage() {
+    cat <<EOH
+Usage:
+  mod update                                  Updates all installed mods
+  mod (install|remove|enable|disable) MOD...  Install, remove, enable or disable all MODs
+  mod list                                    List all installed mods, along with their status
+Flags:
+  --downgrade         Downgrade mod version until compatible version is found
+  --dry-run, -n       Don't change anything, just print actions
+  --verbose, -v       Be verbose
+EOH
+  }
+  if ! [ -e "${MOD_SCRIPT_DIR}" ]; then
+    echo "Failed to find mod script, blatantly refusing to continue!"
+    echo "Try cloning into https://github.com/Tantrisse/Factorio-mods-manager.git and set the MOD_SCRIPT_DIR config before you try again."
+    exit 1
+  fi
+  mod_script="python3 ${MOD_SCRIPT_DIR} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN}"
+  cmd="$1"
+  shift
+  declare -a args
+  for arg in "$@"; do
+    case "$arg" in
+      "--downgrade") mod_script="$mod_script --downgrade" ;;
+      "--dry-run"|"-n") mod_script="$mod_script --dry-run" ;;
+      "--verbose"|"-v") mod_script="$mod_script --verbose" ;;
+      *) args+=("$arg") ;;
+    esac
+  done
+  case "$cmd" in
+    update)
+      $mod_script --update
+      ;;
+    install)
+      for mod in "${args[@]}"; do
+        mod_script="$mod_script --install $mod"
+      done
+      $mod_script
+      ;;
+    enable)
+      for mod in "${args[@]}"; do
+          mod_script="$mod_script --enable $mod"
+      done
+      $mod_script
+      ;;
+    disable)
+      for mod in "${args[@]}"; do
+          mod_script="$mod_script --disable $mod"
+      done
+      $mod_script
+      ;;
+    remove)
+      for mod in "${args[@]}"; do
+        mod_script="$mod_script --remove $mod"
+      done
+      $mod_script
+      ;;
+    list)
+      $mod_script --list
+      ;;
+    help)
+      mod_usage
+      ;;
+    *)
+      echo "Unknown command: $cmd"
+      mod_usage
+      return 1
+      ;;
+  esac
+}
 
-  stop)
-    # Stops the server
-    if is_running; then
-      send_cmd "Server is being shut down on request"
-      if ! stop_service; then
-        echo "Could not stop $SERVICE_NAME"
-        exit 1
-      fi
-    else
-      echo "No running server."
-      exit 0
-    fi
-    ;;
+function run_main(){
+  
+  config_file=$1; shift
+  command=$1
 
-  restart)
-    # Restarts the server
-    if is_running; then
-      send_cmd "Server is being restarted on request, be right back!"
-      if stop_service; then
-        if ! start_service; then
-          echo "Could not start $SERVICE_NAME after restart!"
-          exit 1
+  case "${command}" in
+    help|listcommands)
+      debug "Skip loading config for command '${command}'"
+      ;;
+    *)
+      load_config "${config_file}" "$@" || return $?
+      ;;
+  esac
+  
+  case "${command}" in
+    start)
+      start_service
+      return $?
+      ;;
+
+    stop)
+      # Stops the server
+      if is_running; then
+        send_cmd "Server is being shut down on request"
+        if ! stop_service; then
+          echo "Could not stop $SERVICE_NAME"
+          return 1
         fi
       else
-        echo "Failed to stop $SERVICE_NAME, aborting restart!"
-        exit 1
+        echo "No running server."
+        return 0
       fi
-    else
-      echo "No running server to restart, starting it..."
-      if ! start_service; then
-        echo "Could not start $SERVICE_NAME"
-        exit 1
-      fi
-    fi
-    ;;
+      ;;
 
-  status)
-    # Shows server status
-    if is_running; then
-      echo "$SERVICE_NAME is running."
-    else
-      echo "$SERVICE_NAME is not running."
-      exit 1
-    fi
-    ;;
-  cmd)
-    if [ -z "$2" ]; then
-      trap 'clear' SIGTERM EXIT
-
-      clear
-      echo "Type any command or send chat messages"
-      echo "This interactive commandline adds additional commands:"
-      echo ""
-      echo -e "\texit\t\texit the commandline"
-      echo -e "\tclear\t\tclear the commandline screen"
-      echo ""
-
-      while true; do
-        read -e -p "server@${SERVICE_NAME}> " cmd
-        [ "${cmd}" == "exit" ] && exit 0
-        [ "${cmd}" == "clear" ] && clear && continue
-        echo ${cmd} > ${FIFO}
-        sleep 1
-      done
-    else
-      send_cmd "${@:2}"
-    fi
-    ;;
-  chatlog)
-    case $2 in
-      --tail|-t)
-        tail -F -n +0 ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
-        ;;
-      *)
-        cat ${CMDOUT} |egrep -v "${NONCMDPATTERN}"
-        ;;
-    esac
-    ;;
-  players)
-    cmd_players
-    ;;
-  players-online|online)
-    cmd_players online
-    ;;
-  new-game)
-    if [ -z $2 ]; then
-      echo "You must specify a save name for your new game"
-      exit 1
-    fi
-    savename="${WRITE_DIR}/saves/$2"
-    createsavecmd="$BINARY --create \"${savename}\""
-
-    # Check if user wants to use custom map gen settings
-    if [ $3 ]; then
-      if [ -e "${WRITE_DIR}/$3" ]; then
-        createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/$3 ${EXE_ARGS_GLIBC}"
+    restart)
+      # Restarts the server
+      if is_running; then
+        send_cmd "Server is being restarted on request, be right back!"
+        if stop_service; then
+          if ! start_service; then
+            echo "Could not start $SERVICE_NAME after restart!"
+            return 1
+          fi
+        else
+          echo "Failed to stop $SERVICE_NAME, aborting restart!"
+          return 1
+        fi
       else
-        echo "Specified map gen settings json does not exist"
-        exit 1
+        echo "No running server to restart, starting it..."
+        if ! start_service; then
+          echo "Could not start $SERVICE_NAME"
+          return 1
+        fi
       fi
-    fi
+      ;;
 
-    # Check if user wants to use custom map settings
-    if [ $4 ]; then
-      if [ -e "${WRITE_DIR}/$4" ]; then
-        createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/$4 ${EXE_ARGS_GLIBC}"
+    status)
+      # Shows server status
+      if is_running; then
+        echo "$SERVICE_NAME is running."
       else
-        echo "Specified map settings json does not exist"
-        exit 1
+        echo "$SERVICE_NAME is not running."
+        return 1
       fi
-    fi
+      ;;
+    cmd)
+      if [ -z "$2" ]; then
+        trap 'clear' SIGTERM EXIT
 
-    # Stop Service
-    if is_running; then
-      send_cmd "Generating new save, please stand by"
-      if ! stop_service; then
-        echo "Failed to stop server, unable to create new save"
-        exit 1
+        clear
+        echo "Type any command or send chat messages"
+        echo "This interactive commandline adds additional commands:"
+        echo ""
+        echo -e "\texit\t\texit the commandline"
+        echo -e "\tclear\t\tclear the commandline screen"
+        echo ""
+
+        while true; do
+          read -r -e -p "server@${SERVICE_NAME}> " cmd
+          [ "${cmd}" == "exit" ] && return 0
+          [ "${cmd}" == "clear" ] && clear && continue
+          echo "${cmd}" > "${FIFO}"
+          sleep 1
+        done
+      else
+        send_cmd "${@:2}"
       fi
-    fi
-
-    if ! as_user "$createsavecmd"; then
-      echo "Failed to create new game"
-      exit 1
-    else
-      echo "New game created: ${savename}.zip"
-    fi
-    ;;
-
-  save-game)
-    savename="${WRITE_DIR}/saves/$2.zip"
-
-    # Stop Service
-    if is_running; then
-      send_cmd "Stopping server to save game"
-      if ! stop_service; then
-        echo "Failed to stop server, unable to save as \"$2\""
-        exit 1
+      ;;
+    chatlog)
+      case $2 in
+        --tail|-t)
+          tail -F -n +0 "${CMDOUT}" |grep -E -v "${NONCMDPATTERN}"
+          ;;
+        *)
+          grep -E -v "${NONCMDPATTERN}" "${CMDOUT}"
+          ;;
+      esac
+      ;;
+    players)
+      cmd_players
+      ;;
+    players-online|online)
+      cmd_players online
+      ;;
+    new-game)
+      if [ -z "$2" ]; then
+        echo "You must specify a save name for your new game"
+        return 1
       fi
-    fi
+      savename="${WRITE_DIR}/saves/$2"
+      createsavecmd="$BINARY --create \"${savename}\""
 
-    lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-    if ! as_user "cp \"${lastsave}\" \"${savename}\""; then
-      echo "Error! Failed to save game"
-      exit 1
-    fi
-    ;;
-
-  load-save)
-    # Ensure we get a new save file name
-    newsave=${WRITE_DIR}/saves/$2.zip
-    if [ ! -f "${newsave}" ]; then
-      echo "Save \"${newsave}\" does not exist, aborting action!"
-      exit 1
-    fi
-
-    # Since stopping the server causes a save we have to stop the server to do this
-    if is_running; then
-      send_cmd "Stopping server to load a saved game"
-      if ! stop_service; then
-        echo "Aborting, unable to stop $SERVICE_NAME"
-        exit 1
+      # Check if user wants to use custom map-gen-settings
+      if [ -n "$3" ]; then
+        if [ -e "${WRITE_DIR}/data/$3" ]; then
+          createsavecmd="$createsavecmd --map-gen-settings=${WRITE_DIR}/data/$3"
+        else
+          echo "Specified map-gen-settings json file does not exist in server's /data directory"
+          return 1
+        fi
       fi
-    fi
 
-    # Touch the new save file
-    as_user "touch \"${newsave}\""
-    ;;
-  install)
-    install "$2"
-    ;;
-  update)
-    update "$2"
-    ;;
-  inv|invocation)
-    echo ${INVOCATION}
-    ;;
-  help|--help|-h)
-    usage
-    ;;
-  listcommands)
-    echo `$0 help 2> /dev/null |egrep '^   ' |awk '{ print $1 }'`
-    ;;
-  listsaves)
-    find ${WRITE_DIR} -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
-    ;;
-  version)
-    echo `get_bin_version`
-    ;;
-  source)
-    # do not call `exit` and just return successfully, so that other scripts (possibly with set -e) may source this script to import all out variables and functions
-    return 0
-    ;;
-  *)
-    echo "No such command!"
-    echo
-    usage
-    exit 1
-    ;;
-esac
+      # Check if user wants to use custom map-settings
+      if [ -n "$4" ]; then
+        if [ -e "${WRITE_DIR}/data/$4" ]; then
+          createsavecmd="$createsavecmd --map-settings=${WRITE_DIR}/data/$4"
+        else
+          echo "Specified map-settings json file does not exist in server's /data directory"
+          return 1
+        fi
+      fi
+      
+      if ! as_user "$createsavecmd ${EXE_ARGS_GLIBC}"; then
+        echo "Failed to create new game"
+        return 1
+      else
+        echo "New game created: ${savename}.zip"
+      fi
+      ;;
 
-exit 0
+    save-game)
+      savename="${WRITE_DIR}/saves/$2.zip"
+
+      # Stop Service
+      if is_running; then
+        send_cmd "Stopping server to save game"
+        if ! stop_service; then
+          echo "Failed to stop server, unable to save as \"$2\""
+          return 1
+        fi
+      fi
+
+      lastsave=$(find "${WRITE_DIR}/saves" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
+      if ! as_user "cp \"${lastsave}\" \"${savename}\""; then
+        echo "Error! Failed to save game"
+        return 1
+      fi
+      ;;
+
+    load-save)
+      # Ensure we get a new save file name
+      newsave=${WRITE_DIR}/saves/$2.zip
+      if [ ! -f "${newsave}" ]; then
+        echo "Save \"${newsave}\" does not exist, aborting action!"
+        return 1
+      fi
+
+      # Since stopping the server causes a save we have to stop the server to do this
+      if is_running; then
+        send_cmd "Stopping server to load a saved game"
+        if ! stop_service; then
+          echo "Aborting, unable to stop $SERVICE_NAME"
+          return 1
+        fi
+      fi
+
+      # Touch the new save file
+      as_user "touch \"${newsave}\""
+      ;;
+    install)
+      install "$2"
+      return $?
+      ;;
+    update)
+      update "$2"
+      return $?
+      ;;
+    inv|invocation)
+      echo "${INVOCATION}"
+      ;;
+    help)
+      usage
+      ;;
+    listcommands)
+      usage |grep -oP '(?<=  )\w+'
+      ;;
+    listsaves)
+      find "${WRITE_DIR}"/saves -type f -name "*.zip" -exec basename {} \; |sed -e 's/.zip//'
+      ;;
+    version)
+      get_bin_version
+      ;;
+    mod)
+      shift
+      mod "$@"
+      ;;
+    *)
+      echo "No such command!"
+      echo
+      usage
+      return 1
+      ;;
+  esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  if [ -L "${0}" ]; then
+    config_file=$(readlink -e "$0" | sed "s:[^/]*$:config:")
+  else
+    # shellcheck disable=SC2001
+    config_file=$(echo "$0" | sed "s:[^/]*$:config:")
+  fi
+
+  run_main "$config_file" "$@"
+  exit $?
+fi

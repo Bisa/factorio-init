@@ -1,0 +1,37 @@
+ARG ubuntu_version=20.04
+
+### A base image without test resources:
+FROM ubuntu:$ubuntu_version AS sans-test-resources
+ARG factorio_user=factorio
+ARG factorio_group=factorio
+
+RUN apt-get update && apt-get install -y \
+    parallel \
+    wget \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN addgroup --system $factorio_group
+RUN adduser --system --ingroup $factorio_group $factorio_user
+
+USER $factorio_user
+WORKDIR /opt/factorio-init
+ENTRYPOINT ["bash", "/opt/factorio-init/extras/test/libs/bats-core/bin/bats"]
+
+### Build onto the base, add test resources:
+FROM sans-test-resources AS with-test-resources
+ENV FACTORIO_INIT_WITH_TEST_RESOURCES=1
+ARG factorio_version=1.0.0
+
+RUN wget -O /tmp/factorio_headless_x64_${factorio_version}.tar.xz \
+     https://factorio.com/get-download/${factorio_version}/headless/linux64
+
+### and pre-install the game
+FROM with-test-resources AS with-pre-installed-game
+USER root
+RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
+	chown -R ${factorio_user}:${factorio_group} /opt/factorio
+USER ${factorio_user}
+ENV FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1
+RUN /opt/factorio/bin/x64/factorio --create /opt/factorio/saves/server-save && \
+	cp /opt/factorio/data/server-settings.example.json /opt/factorio/data/server-settings.json
+
