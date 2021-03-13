@@ -534,10 +534,10 @@ function install(){
   # Generate default config & create a default save-game to play on
   debug "EXE_ARGS_GLIBC: ${EXE_ARGS_GLIBC}"
   if as_user "${BINARY} --create ${target}/saves/server-save ${EXE_ARGS_GLIBC}"; then
-    if ! as_user "cp \"${target}/data/server-settings.example.json\" \"${target}/data/server-settings.json\""; then
+    if ! as_user "cp \"${target}/data/server-settings.example.json\" \"${SERVER_SETTINGS}\""; then
       error "WARNING! Unable to copy server settings, may need to be resolved manually."
     fi
-    info "Installation complete, edit '${target}/data/server-settings.json' and start your server."
+    info "Installation complete, edit '${SERVER_SETTINGS}' and start your server."
     return 0
   else
     error "Failed to create save, review the output above to recover"

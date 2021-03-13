@@ -2,6 +2,32 @@
 
 A factorio init script in bash
 
+## Requirements
+
+The following software packages need to be installed:
+
+- Wget
+- cURL
+- bash-completion (optional but recomended)
+
+- for yum based systems do the following:
+
+```bash
+sudo yum install curl wget bash-completion
+```
+
+- for dnf based systems do the following:
+
+```bash
+sudo dnf install curl wget bash-completion
+```
+
+- for apt-get based systems do the following:
+
+```bash
+sudo apt-get install curl wget bash-completion
+```
+
 ## Debugging
 
 If you find yourself wondering why stuff is not working the way you expect:
