@@ -25,9 +25,9 @@ FACTORIO_PATH=/opt/factorio
 # Server admin settings
 # Server admin list file, must be in the following format:
 # [
-#    admin1,
-#    admin2,
-#    adminX
+#    "admin1",
+#    "admin2",
+#    "adminX"
 # ]
 # If the file does not exist in ${FACTORIO_PATH}/data, a blank copy will be created.
 ADMINLIST=${FACTORIO_PATH}/data/server-adminlist.json
