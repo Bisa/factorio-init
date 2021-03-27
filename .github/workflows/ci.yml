@@ -26,7 +26,7 @@ jobs:
         uses: textbook/git-checkout-submodule-action@master
       - name: Prepare env
         run: |
-          echo "factorio_version=1.0.0" >> $GITHUB_ENV
+          echo "factorio_version=1.1.30" >> $GITHUB_ENV
           echo "factorio_user=factorio" >> $GITHUB_ENV
           echo "factorio_group=factorio" >> $GITHUB_ENV
       - name: Add factorio user

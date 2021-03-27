@@ -20,7 +20,7 @@ ENTRYPOINT ["bash", "/opt/factorio-init/extras/test/libs/bats-core/bin/bats"]
 ### Build onto the base, add test resources:
 FROM sans-test-resources AS with-test-resources
 ENV FACTORIO_INIT_WITH_TEST_RESOURCES=1
-ARG factorio_version=1.0.0
+ARG factorio_version=1.1.30
 
 RUN wget -O /tmp/factorio_headless_x64_${factorio_version}.tar.xz \
      https://factorio.com/get-download/${factorio_version}/headless/linux64

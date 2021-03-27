@@ -170,10 +170,10 @@ The ```extras/.githooks/pre-commit``` will run shellcheck, local tests as well a
 
 ```bash
 docker build --build-arg ubuntu_version=20.04 \
-			 --build-arg factorio_version=1.0.0 \
+			 --build-arg factorio_version=1.1.30 \
 			 --tag ubuntu-finit:latest - < extras/docker/Dockerfile.ubuntu
 docker build --build-arg centos_version=centos8 \
-			 --build-arg factorio_version=1.0.0 \
+			 --build-arg factorio_version=1.1.30 \
 			 --tag centos-finit:latest - < extras/docker/Dockerfile.centos
 ```
 

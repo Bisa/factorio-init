@@ -52,7 +52,7 @@ function dockertest(){
     done
 }
 
-factorio_version="1.0.0"
+factorio_version="1.1.30"
 targets="with-test-resources sans-test-resources"
 
 # TODO:	Break the running of tests out into a separate script to facilitate:
