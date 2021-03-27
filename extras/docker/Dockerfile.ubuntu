@@ -27,6 +27,10 @@ RUN wget -O /tmp/factorio_headless_x64_${factorio_version}.tar.xz \
 
 ### and pre-install the game
 FROM with-test-resources AS with-pre-installed-game
+ARG factorio_version
+ARG factorio_user=factorio
+ARG factorio_group=factorio
+
 USER root
 RUN tar -xvf /tmp/factorio_headless_x64_${factorio_version}.tar.xz -C /opt && \
 	chown -R ${factorio_user}:${factorio_group} /opt/factorio
