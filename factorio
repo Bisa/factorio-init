@@ -720,7 +720,12 @@ EOH
     echo "Try cloning into https://github.com/Tantrisse/Factorio-mods-manager.git and set the MOD_SCRIPT_DIR config before you try again."
     exit 1
   fi
-  mod_script="python3 ${MOD_SCRIPT_DIR} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN}"
+
+  MOD_MANAGER_GLIBC_ARGS=""
+  if [ "${ALT_GLIBC}" -gt 0 ]; then
+    MOD_MANAGER_GLIBC_ARGS="--alternative-glibc-directory ${ALT_GLIBC_DIR} --alternative-glibc-version ${ALT_GLIBC_VER}"
+  fi
+  mod_script="python ${MOD_SCRIPT_DIR} --path-to-factorio ${WRITE_DIR} --user ${UPDATE_USERNAME} --token ${UPDATE_TOKEN} ${MOD_MANAGER_GLIBC_ARGS}"
   cmd="$1"
   shift
   declare -a args
