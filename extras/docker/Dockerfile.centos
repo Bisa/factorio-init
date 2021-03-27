@@ -1,5 +1,5 @@
 ARG centos_version=centos8
-ARG factorio_version=1.0.0
+ARG factorio_version=1.1.30
 ARG factorio_user=factorio
 
 ### A base image without test resources:

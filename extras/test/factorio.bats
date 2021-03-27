@@ -280,7 +280,7 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
 	load_config "${config_file}"
     
 	DEBUG=1
-    tarball="/tmp/factorio_headless_x64_1.0.0.tar.xz"
+    tarball="/tmp/factorio_headless_x64_1.1.30.tar.xz"
 
     run install "${tarball}"
     
