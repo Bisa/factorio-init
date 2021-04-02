@@ -1,2 +1,4 @@
 config
 **/*.swp
+#ignore .code-workspace files generated from vscode
+*.code-workspace

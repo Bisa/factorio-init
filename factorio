@@ -355,7 +355,7 @@ function stop_service() {
     fi
 
     # Start the reader (in case tail stopped already)
-    cat "${FIFO}" &
+    #cat "${FIFO}" &
     # Open pipe for writing.
     exec 3> "${FIFO}"
     # Write a newline to the pipe, this triggers a SIGPIPE and causes tail to exit
