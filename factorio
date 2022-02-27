@@ -104,6 +104,10 @@ function config_defaults() {
     WAIT_PINGPONG=0
   fi
 
+  if [ -z "${FORCED_SHUTDOWN}" ]; then
+    FORCED_SHUTDOWN=15
+  fi
+
   if [ -z "${ADMINLIST}" ]; then
     ADMINLIST="${FACTORIO_PATH}/data/server-adminlist.json"
   fi
@@ -332,7 +336,7 @@ function stop_service() {
     echo -n "Stopping ${SERVICE_NAME}: "
     if kill -TERM "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
       sec=1
-      while [ "$sec" -le 15 ]; do
+      while [ "$sec" -le "${FORCED_SHUTDOWN}" ]; do
         if [ -e "${PIDFILE}" ]; then
           if kill -0 "$(cat "${PIDFILE}" 2> /dev/null)" 2> /dev/null; then
             echo -n ". "
