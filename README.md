@@ -8,24 +8,25 @@ The following software packages need to be installed:
 
 - Wget
 - cURL
+- jq
 - bash-completion (optional but recomended)
 
 - for yum based systems do the following:
 
 ```bash
-sudo yum install curl wget bash-completion
+sudo yum install curl wget bash-completion jq
 ```
 
 - for dnf based systems do the following:
 
 ```bash
-sudo dnf install curl wget bash-completion
+sudo dnf install curl wget bash-completion jq
 ```
 
 - for apt-get based systems do the following:
 
 ```bash
-sudo apt-get install curl wget bash-completion
+sudo apt-get install curl wget bash-completion jq
 ```
 
 ## Debugging

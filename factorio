@@ -465,24 +465,25 @@ function install(){
   fi
 
   if [ "${downloadlatest}" = 1 ]; then
-    # fetch a http HEAD response, we need it to know what to download later
-    debug "Checking for latest headless version."
-    if ! httpresponse="$(curl -LIs "${LATEST_HEADLESS_URL}" 2>&1)"; then
-      info "${httpresponse}"
-      error "Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
-      return 1
-    else
-      httpstatus="$(echo "${httpresponse}" |grep HTTP |tail -n -1 |grep -oP '(?<= )\d{3}(?= )')"
-      if ! [ "${httpstatus}" = "200" ]; then
+    if ! httpresponse="$(curl -s https://factorio.com/api/latest-releases)"; then
         info "${httpresponse}"
-        error "Aborting install, expected HTTP 200 from '${LATEST_HEADLESS_URL}', got '${httpstatus}'."
-        return 1
-      fi
+        error "Aborting install, unable to curl 'https://factorio.com/api/latest-releases'"
     fi
-    
-    # parse the response
-    filename="$(echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1)"
-    #location=$(echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1)
+
+    # We change the key in the json
+    if [ "${UPDATE_EXPERIMENTAL}" -gt 0 ]; then
+      LATEST_RELEASES_JSON_KEY=".experimental.headless"
+    else
+      LATEST_RELEASES_JSON_KEY=".stable.headless"
+    fi
+
+    # We fetch the version in the json based on the LATEST_RELEASES_JSON_KEY
+    if ! version="$(echo $httpresponse | jq -r $LATEST_RELEASES_JSON_KEY)"; then
+        info "${version}"
+        error "Aborting install, unable to find version with key ${LATEST_RELEASES_JSON_KEY}"
+    fi
+
+    filename="factorio_headless_x64_${version}.tar.xz"
     debug "Found, latest version: '${filename}'"
 
     if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
