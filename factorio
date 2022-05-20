@@ -481,7 +481,7 @@ function install(){
     fi
     
     # parse the response
-    filename="$(echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1)"
+    filename="$(curl -Is "${LATEST_HEADLESS_URL}" | grep location | sed -e 's/location: https:\/\/dl.factorio.com\/releases\///' | sed -e 's/\?secure.*$//' 2>&1)"
     #location=$(echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1)
     debug "Found, latest version: '${filename}'"
 
