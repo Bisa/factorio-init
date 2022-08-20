@@ -10,7 +10,13 @@ on:
 jobs:
   shellchecks:
     runs-on: ubuntu-latest
+    environment: "CI Tests"
     steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Checkout repo
         uses: actions/checkout@master
       - name: Shellchecks
@@ -19,11 +25,17 @@ jobs:
           docker run --rm -v "$GITHUB_WORKSPACE:/mnt" koalaman/shellcheck:stable factorio
   bats:
     runs-on: ubuntu-latest
+    environment: "CI Tests"
     steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Checkout repo
         uses: actions/checkout@master
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+        with:
+          submodules: recursive
       - name: Prepare env
         run: |
           echo "factorio_version=1.1.30" >> $GITHUB_ENV
