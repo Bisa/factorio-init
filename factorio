@@ -373,7 +373,7 @@ function stop_service() {
 
 function send_cmd(){
   NEED_OUTPUT=0
-  if [ "xx$1" == "xx-o" ]; then
+  if [ "$1" == "-o" ]; then
     NEED_OUTPUT=1
     shift
   fi
