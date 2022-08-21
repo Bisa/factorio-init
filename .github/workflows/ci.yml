@@ -38,7 +38,7 @@ jobs:
           submodules: recursive
       - name: Prepare env
         run: |
-          echo "factorio_version=1.1.30" >> $GITHUB_ENV
+          echo "factorio_version=1.1.61" >> $GITHUB_ENV
           echo "factorio_user=factorio" >> $GITHUB_ENV
           echo "factorio_group=factorio" >> $GITHUB_ENV
       - name: Add factorio user
@@ -64,12 +64,3 @@ jobs:
           echo "FACTORIO_INIT_WITH_PRE_INSTALLED_GAME=1" >> $GITHUB_ENV
       - name: Bats with pre-installed game
         run: sudo -E -u "${factorio_user}" extras/test/libs/bats-core/bin/bats extras/test
-#  docker-tests:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Checkout repo
-#        uses: actions/checkout@master
-#      - name: Checkout submodules
-#        uses: textbook/git-checkout-submodule-action@master
-#      - name: foo
-#        run: extras/.githooks/pre-commit

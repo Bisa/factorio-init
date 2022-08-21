@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# TODO:	Break the running of tests out into a separate script to facilitate:
+#		- only running selective tests/linting pre-commit, for sanity
+#		- running all/some tests from commandline (to avoid stashing/doing git specific stuff)
+#		- running all tests before pushing (ie what is happening now on every pre-commit)
+
+set -euo pipefail
+
+# find out where this repo is situated
+root_dir="$(git rev-parse --show-toplevel)"
+source "$root_dir/extras/.githooks/common" || exit 1
+
+z40=0000000000000000000000000000000000000000
+
+# shellcheck disable=SC2034
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$local_sha" = $z40 ]; then
+      # Handle delete
+      :
+  else
+    [[ "${SKIP_TESTS_PRE_PUSH:-False}" == "True" ]] && exit 0
+    run_shellchecks &&
+    run_localtests &&
+    run_dockertests
+    exit $?
+  fi
+done

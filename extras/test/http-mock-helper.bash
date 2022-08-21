@@ -40,13 +40,13 @@ mock_wget_fail() {
 }
 
 export CURL_LATEST_STABLE_HEAD_302_503="\
-HTTP/1.1 302 FOUND
+HTTP/1.1.612 FOUND
 Connection: keep-alive
 Server: gunicorn/20.0.4
 Date: Thu, 12 Mar 2020 22:35:20 GMT
 Content-Type: text/html; charset=utf-8
 Content-Length: 449
-Location: https://dcdn.factorio.com/releases/factorio_headless_x64_1.1.30.tar.xz?key=FdR-M6lteBzs3F5Pbrq06A&expires=1584056120
+Location: https://dcdn.factorio.com/releases/factorio_headless_x64_1.1.61.tar.xz?key=FdR-M6lteBzs3F5Pbrq06A&expires=1584056120
 X-Frame-Options: SAMEORIGIN
 Strict-Transport-Security: max-age=31536000
 Via: 1.1 vegur
@@ -61,13 +61,13 @@ Connection: keep-alive
 "
 
 export CURL_LATEST_STABLE_HEAD_302_200="\
-HTTP/1.1 302 FOUND
+HTTP/1.1.612 FOUND
 Connection: keep-alive
 Server: gunicorn/20.0.4
 Date: Thu, 12 Mar 2020 22:44:04 GMT
 Content-Type: text/html; charset=utf-8
 Content-Length: 449
-Location: https://dcdn.factorio.com/releases/factorio_headless_x64_1.1.30.tar.xz?key=ta68OzQ6ptLVKBcm9hdOEA&expires=1584056644
+Location: https://dcdn.factorio.com/releases/factorio_headless_x64_1.1.61.tar.xz?key=ta68OzQ6ptLVKBcm9hdOEA&expires=1584056644
 X-Frame-Options: SAMEORIGIN
 Strict-Transport-Security: max-age=31536000
 Via: 1.1 vegur
@@ -80,7 +80,7 @@ Content-Length: 32864892
 Last-Modified: Tue, 19 Nov 2019 13:46:17 GMT
 Connection: keep-alive
 ETag: \"5dd3f229-1f57a7c\"
-Content-Disposition: attachment; filename=factorio_headless_x64_1.1.30.tar.xz
+Content-Disposition: attachment; filename=factorio_headless_x64_1.1.61.tar.xz
 Accept-Ranges: bytes
 
 "

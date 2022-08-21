@@ -162,7 +162,7 @@ git submodule update
 git config --local core.hooksPath extras/.githooks
 ```
 
-The ```extras/.githooks/pre-commit``` will run shellcheck, local tests as well as docker tests with and without resources.
+The ```extras/.githooks/pre-push``` will run shellcheck, local tests as well as docker tests with and without resources.
 
 #### With Docker
 
@@ -170,10 +170,10 @@ The ```extras/.githooks/pre-commit``` will run shellcheck, local tests as well a
 
 ```bash
 docker build --build-arg ubuntu_version=20.04 \
-			 --build-arg factorio_version=1.1.30 \
+			 --build-arg factorio_version=1.1.61 \
 			 --tag ubuntu-finit:latest - < extras/docker/Dockerfile.ubuntu
 docker build --build-arg centos_version=centos8 \
-			 --build-arg factorio_version=1.1.30 \
+			 --build-arg factorio_version=1.1.61 \
 			 --tag centos-finit:latest - < extras/docker/Dockerfile.centos
 ```
 
