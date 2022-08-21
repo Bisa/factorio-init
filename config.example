@@ -56,6 +56,11 @@ SAVELOG=0
 # Useful for Cloud providers where VMs may start faster than their Internet connectivity is plumbed.
 WAIT_PINGPONG=0
 
+# Time after which the factorio server will be killed with force. 
+# Adjust this to allow more time for map saving, e.g. on modded servers with multiple maps.
+# Increased values must be propagated to service files (systemd) as well.
+FORCED_SHUTDOWN=15
+
 # Using install, it's possible to cache the tarballs fetched from Wube
 INSTALL_CACHE_TAR=1
 # set this to a directory where you allow this script to create a 'factorio-install' directory
