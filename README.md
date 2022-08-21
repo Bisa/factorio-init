@@ -4,29 +4,10 @@ A factorio init script in bash
 
 ## Requirements
 
-The following software packages need to be installed:
-
-- Wget
-- cURL
-- bash-completion (optional but recomended)
-
-- for yum based systems do the following:
-
-```bash
-sudo yum install curl wget bash-completion
-```
-
-- for dnf based systems do the following:
-
-```bash
-sudo dnf install curl wget bash-completion
-```
-
-- for apt-get based systems do the following:
-
-```bash
-sudo apt-get install curl wget bash-completion
-```
+- [wget](https://www.gnu.org/software/wget/)
+- [curl](https://curl.se/)
+- [xz](https://tukaani.org/xz/) (wube uses tar.xz for tarballs, only needed if you install with this script)
+- [bash-completion](https://github.com/scop/bash-completion) (optional)
 
 ## Debugging
 
@@ -193,7 +174,7 @@ Please note that some tests will be skipped unless you run them with the docker 
 - run the tests
 
 ```bash
-./extras/test/libs/bats-core/bin/bats test
+./extras/test/libs/bats-core/bin/bats extras/test
 ```
 
 Using [parallel](https://www.gnu.org/software/parallel), adding ```--jobs 10``` to the above (adjust the number accordingly) will allow you to execute more tests in parallel and in turn possibly decrease the total time required to complete the run.

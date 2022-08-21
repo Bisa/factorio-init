@@ -158,7 +158,7 @@ factorio_script=./factorio
 }
 
 @test ".install fails when FACTORIO_PATH is not writable" {
-	[ $(id -u) -eq 0 ] && skip "We are running as root, we can not test non-writeability"
+	  [ $(id -u) -eq 0 ] && skip "We are running as root, we can not test non-writeability"
     load 'tmp-helper'
     load 'http-mock-helper'
     mock_curl_fail
@@ -166,6 +166,8 @@ factorio_script=./factorio
 
     source $factorio_script
     load_config ./config.example
+    USERNAME=$(id -un)
+    USERGROUP=$(id -gn)
     FACTORIO_PATH="`create_tmp_empty_dir`"
     chmod a-w "${FACTORIO_PATH}"
 
@@ -185,13 +187,14 @@ factorio_script=./factorio
     load_config ./config.example
     FACTORIO_PATH="`create_tmp_empty_dir`"
     DEBUG=1
+    USERNAME=$(id -un)
+    USERGROUP=$(id -gn)
 
     run install
     
-    assert_output "\
-DEBUG: Checking for latest headless version.
-curl: (X) We ran into curl error X
-Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
+    assert_line "DEBUG: Checking for latest headless version."
+    assert_line "curl: (X) We ran into curl error X"
+    assert_line "Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     assert_failure 1
 }
 
@@ -244,16 +247,16 @@ Aborting install, unable to curl '${LATEST_HEADLESS_URL}'"
     mock_wget_fail
     
     config_file="${BATS_TMPDIR}/config"
-	cp ./config.example "${config_file}"
-	if [ -n "${FACTORIO_INIT_ALT_GLIBC}" ]; then
-		sed -i -e 's/ALT_GLIBC=0/ALT_GLIBC=1/' "${config_file}"
-	fi
-	sed -i -e 's#FACTORIO_PATH=/opt/factorio#FACTORIO_PATH="`create_tmp_empty_dir`"#' "${config_file}"
-	load_config "${config_file}"
+    cp ./config.example "${config_file}"
+    if [ -n "${FACTORIO_INIT_ALT_GLIBC}" ]; then
+		  sed -i -e 's/ALT_GLIBC=0/ALT_GLIBC=1/' "${config_file}"
+    fi
+	  sed -i -e 's#FACTORIO_PATH=/opt/factorio#FACTORIO_PATH="`create_tmp_empty_dir`"#' "${config_file}"
+	  load_config "${config_file}"
 
     INSTALL_CACHE_TAR=1
-    USERNAME=`whoami`
-    USERGROUP=`whoami`
+    USERNAME=$(id -un)
+    USERGROUP=$(id -gn)
     DEBUG=1
 
     run install
