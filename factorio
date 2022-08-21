@@ -243,7 +243,7 @@ Available commands:
 }
 
 function as_user() {
-  debug "as_user: $1}"
+  debug "as_user: $1"
   if [ "$ME" == "$USERNAME" ]; then # Are we the factorio user?
     bash -c "$1"
   elif [ "$(id -u)" == "0" ]; then # Are we root?
@@ -459,7 +459,7 @@ function install(){
   fi
 
   target="${FACTORIO_PATH}"
-  if ! test -w "${target}"; then
+  if ! as_user "test -w '${target}'"; then
     error "Aborting install, unable to write to '${target}'!"
     return 1
   fi
@@ -481,9 +481,13 @@ function install(){
     fi
     
     # parse the response
-    filename="$(echo "${httpresponse}" |grep attachment |sed 's/\r$//' |sed -e 's/Content-Disposition: attachment; filename=//' 2>&1)"
-    #location=$(echo "${httpresponse}" |grep -E '^Location: ' |tail -n -1 |sed -e 's/Location: //' 2>&1)
-    debug "Found, latest version: '${filename}'"
+    if filename=$(echo "${httpresponse}" |grep -oP '(?<=^location: )[^\?]+' |grep -oP 'factorio_headless.+'); then
+      debug "Found, latest version: '${filename}'"
+    else
+      debug "${httpresponse}"
+      error "Aborting install, unable to parse version - check the http response!"
+      return 1
+    fi
 
     if [ "${INSTALL_CACHE_TAR}" = 1 ]; then
       # we want to cache the tarballs, ensure we have somewhere to save them
@@ -590,7 +594,7 @@ function update(){
         return 1
       fi
     fi
-    if ! as_user "test -w ${tmpdir}"; then
+    if ! as_user "test -w '${tmpdir}'"; then
       echo "Aborting update! Unable to write to tmpdir: ${tmpdir}"
       return 1
     fi
@@ -861,7 +865,7 @@ function run_main(){
           read -r -e -p "server@${SERVICE_NAME}> " cmd
           [ "${cmd}" == "exit" ] && return 0
           [ "${cmd}" == "clear" ] && clear && continue
-          echo "${cmd}" > "${FIFO}"
+          send_cmd -o "${cmd}"
           sleep 1
         done
       else
