@@ -1,2 +1,3 @@
 config
 **/*.swp
+*.code-workspace
