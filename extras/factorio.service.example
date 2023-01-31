@@ -18,6 +18,8 @@ TimeoutStopSec=20
 ExecStop=/opt/factorio-init/factorio stop
 RestartSec=20
 Restart=on-failure
+StartLimitIntervalSec=600
+StartLimitBurst=5
 
 [Install]
 WantedBy=multi-user.target
