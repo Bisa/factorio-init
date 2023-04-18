@@ -2,6 +2,7 @@
 Description=Factorio Server
 Wants=network-online.target
 After=network.target network-online.target
+StartLimitIntervalSec=600
 
 [Service]
 User=factorio
@@ -18,7 +19,6 @@ TimeoutStopSec=20
 ExecStop=/opt/factorio-init/factorio stop
 RestartSec=20
 Restart=on-failure
-StartLimitIntervalSec=600
 StartLimitBurst=5
 
 [Install]
